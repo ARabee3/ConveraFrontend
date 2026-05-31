@@ -22,7 +22,7 @@ const schema = z.object({
   locationLng: z.number().min(-180).max(180),
   price: z.number().nonnegative(),
   maxCapacity: z.number().int().positive(),
-  coverImage: z.string().optional(),
+  coverImage: z.string().min(1, "Cover image is required"),
   categoryId: z.string().min(1, "Category ID is required"),
   minAge: z.number().optional(),
   ticketTypesStr: z.string().optional(),

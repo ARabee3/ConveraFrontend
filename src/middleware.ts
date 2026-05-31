@@ -25,7 +25,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/admin") && token) {
-    if (role !== "ADMIN" && role !== "SYSTEM_ADMIN") {
+    if (role !== "SYSTEM_ADMIN") {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }
