@@ -41,6 +41,13 @@ export default function Navbar() {
       {user ? (
         <>
           <Link
+            href="/chat"
+            className="text-sm font-medium text-gray-700 hover:text-[#FF385C] transition-colors"
+            onClick={() => setMenuOpen(false)}
+          >
+            Messages
+          </Link>
+          <Link
             href="/bookings"
             className="text-sm font-medium text-gray-700 hover:text-[#FF385C] transition-colors"
             onClick={() => setMenuOpen(false)}

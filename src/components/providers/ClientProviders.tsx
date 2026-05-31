@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth";
+import { ChatProvider } from "./ChatProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,7 +20,9 @@ export default function ClientProviders({ children }: { children: React.ReactNod
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <ChatProvider>
+        {children}
+      </ChatProvider>
     </QueryClientProvider>
   );
 }
