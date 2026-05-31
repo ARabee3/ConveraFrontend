@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { MapPin, Wifi, Star, ChevronLeft } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { MapPin, Wifi, Star, ChevronLeft, Send } from "lucide-react";
 import Link from "next/link";
 import { propertiesApi, bookingsApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
@@ -17,16 +17,66 @@ const PLACEHOLDER = "https://images.unsplash.com/photo-1497366216548-37526070297
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [bookingError, setBookingError] = useState("");
+
+  // Review form state
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewError, setReviewError] = useState("");
+  const [reviewSuccess, setReviewSuccess] = useState(false);
 
   const { data: property, isLoading } = useQuery({
     queryKey: ["property", id],
     queryFn: () => propertiesApi.get(id).then((r) => r.data),
     enabled: !!id,
   });
+
+  const { data: myBookings } = useQuery({
+    queryKey: ["bookings", "me"],
+    queryFn: () => bookingsApi.listMe().then((r) => r.data),
+    enabled: !!user,
+  });
+
+  const confirmedBooking = myBookings?.find(
+    (b) => b.propertyId === id && b.status === "CONFIRMED"
+  );
+
+  const hasReviewed = property?.reviews?.some((r) => r.userId === user?.id);
+
+  const canReview = user && confirmedBooking && !hasReviewed;
+
+  const reviewMutation = useMutation({
+    mutationFn: () =>
+      propertiesApi.createReview(id, {
+        bookingId: confirmedBooking!.id,
+        rating: reviewRating,
+        comment: reviewComment || undefined,
+      }),
+    onSuccess: () => {
+      setReviewSuccess(true);
+      setReviewRating(0);
+      setReviewComment("");
+      setReviewError("");
+      queryClient.invalidateQueries({ queryKey: ["property", id] });
+    },
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { message?: string } } };
+      setReviewError(error?.response?.data?.message || "Failed to submit review.");
+    },
+  });
+
+  const handleSubmitReview = () => {
+    if (reviewRating < 1 || reviewRating > 5) {
+      setReviewError("Please select a rating.");
+      return;
+    }
+    setReviewError("");
+    reviewMutation.mutate();
+  };
 
   const bookMutation = useMutation({
     mutationFn: () => bookingsApi.create(id, checkIn, checkOut),
@@ -131,6 +181,63 @@ export default function PropertyDetailPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {canReview && (
+            <div className="bg-gray-50 rounded-2xl p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Write a review</h2>
+              {reviewSuccess ? (
+                <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl">
+                  Thank you for your review!
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Your rating</p>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewRating(star)}
+                          className="focus:outline-none"
+                        >
+                          <Star
+                            className={`w-6 h-6 ${
+                              star <= reviewRating
+                                ? "fill-[#FF385C] text-[#FF385C]"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      Your experience (optional)
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Share details of your stay..."
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-900 resize-none"
+                    />
+                  </div>
+                  {reviewError && (
+                    <p className="text-red-500 text-xs">{reviewError}</p>
+                  )}
+                  <Button
+                    onClick={handleSubmitReview}
+                    isLoading={reviewMutation.isPending}
+                    className="gap-2"
+                  >
+                    <Send className="w-4 h-4" /> Submit Review
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 

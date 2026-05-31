@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Building2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Building2, Eye, Calendar } from "lucide-react";
 import { hostApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { formatPrice } from "@/lib/utils";
@@ -115,7 +115,21 @@ export default function HostPropertiesPage() {
                         className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                         title="View"
                       >
+                        <Eye className="w-4 h-4" />
+                      </Link>
+                      <Link
+                        href={`/host/properties/${p.id}/edit`}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit"
+                      >
                         <Pencil className="w-4 h-4" />
+                      </Link>
+                      <Link
+                        href={`/host/properties/${p.id}/availability`}
+                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Availability"
+                      >
+                        <Calendar className="w-4 h-4" />
                       </Link>
                       <button
                         onClick={() => handleDelete(p.id, p.title)}
