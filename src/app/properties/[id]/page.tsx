@@ -11,6 +11,7 @@ import { formatPrice, formatDate, diffDays } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import StarRating from "@/components/ui/StarRating";
 import Button from "@/components/ui/Button";
+import MapView from "@/components/ui/MapView";
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80";
 
@@ -168,6 +169,16 @@ export default function PropertyDetailPage() {
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-3">About this place</h2>
             <p className="text-gray-600 leading-relaxed">{property.description}</p>
+          </div>
+
+          {/* Location Map */}
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Where you&apos;ll be</h2>
+            <MapView
+              lat={property.latitude}
+              lng={property.longitude}
+              address={property.address}
+            />
           </div>
 
           {property.amenities?.length > 0 && (

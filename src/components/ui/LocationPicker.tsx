@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { MapPin, Search, Loader2, Crosshair, X, Navigation } from "lucide-react";
+import { MapPin, Search, Loader2, Crosshair, X, Navigation, AlertCircle } from "lucide-react";
 import type { Map as LeafletMap, Marker } from "leaflet";
 
 interface LocationResult {
@@ -28,11 +28,13 @@ export default function LocationPicker({
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [geoError, setGeoError] = useState("");
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<Marker | null>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
@@ -56,13 +58,24 @@ export default function LocationPicker({
   const searchNominatim = useCallback(async (q: string) => {
     if (!q.trim()) {
       setResults([]);
+      setLoading(false);
       return;
     }
+
+    // Cancel previous request
+    if (abortRef.current) abortRef.current.abort();
+    abortRef.current = new AbortController();
+
     setLoading(true);
+    setShowResults(true);
+
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=5&addressdetails=1`,
-        { headers: { "Accept-Language": "en" } }
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=6&addressdetails=1`,
+        {
+          headers: { "Accept-Language": "en" },
+          signal: abortRef.current.signal,
+        }
       );
       const data = await res.json();
       setResults(
@@ -72,8 +85,8 @@ export default function LocationPicker({
           displayName: item.display_name,
         }))
       );
-      setShowResults(true);
-    } catch {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") return;
       setResults([]);
     } finally {
       setLoading(false);
@@ -82,16 +95,25 @@ export default function LocationPicker({
 
   /* ── debounced autocomplete ── */
   const handleQueryChange = (value: string) => {
+    setGeoError("");
     setQuery(value);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+
+    if (value.trim().length === 0) {
+      setResults([]);
+      setShowResults(false);
+      return;
+    }
+
+    if (value.trim().length < 2) {
+      setResults([]);
+      setShowResults(true); // show "Type at least 2 characters"
+      return;
+    }
+
     searchTimeoutRef.current = setTimeout(() => {
-      if (value.trim().length >= 2) {
-        searchNominatim(value);
-      } else {
-        setResults([]);
-        setShowResults(false);
-      }
-    }, 350);
+      searchNominatim(value);
+    }, 250);
   };
 
   /* ── initialise map (client-only) ── */
@@ -103,7 +125,6 @@ export default function LocationPicker({
     let cancelled = false;
 
     const init = async () => {
-      // inject Leaflet CSS
       const linkId = "leaflet-css";
       if (!document.getElementById(linkId)) {
         const link = document.createElement("link");
@@ -199,23 +220,42 @@ export default function LocationPicker({
   };
 
   const getCurrentLocation = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setGeoError("Geolocation is not supported by your browser.");
+      return;
+    }
+    setGeoError("");
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
+        const { latitude, longitude, accuracy } = position.coords;
         const addr = await reverseGeocodeRef.current(latitude, longitude);
         setQuery(addr);
         setShowResults(false);
         if (mapRef.current && markerRef.current) {
           markerRef.current.setLatLng([latitude, longitude]);
-          mapRef.current.setView([latitude, longitude], 15);
+          mapRef.current.setView([latitude, longitude], 16);
         }
         onChangeRef.current({ lat: latitude, lng: longitude, address: addr });
         setLoading(false);
+        // Warn if accuracy is poor (>1km)
+        if (accuracy > 1000) {
+          setGeoError(`Location accuracy is low (~${Math.round(accuracy)}m). Please drag the pin to fine-tune.`);
+        }
       },
-      () => setLoading(false),
-      { enableHighAccuracy: true, timeout: 10000 }
+      (err) => {
+        setLoading(false);
+        if (err.code === 1) {
+          setGeoError("Location permission denied. Please enable location access in your browser settings.");
+        } else if (err.code === 2) {
+          setGeoError("Unable to retrieve your location. Please try again or enter manually.");
+        } else if (err.code === 3) {
+          setGeoError("Location request timed out. Please try again.");
+        } else {
+          setGeoError("An error occurred while fetching your location.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
@@ -223,6 +263,7 @@ export default function LocationPicker({
     setQuery("");
     setResults([]);
     setShowResults(false);
+    setGeoError("");
   };
 
   /* ── click outside to close dropdown ── */
@@ -249,7 +290,7 @@ export default function LocationPicker({
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
             onFocus={() => {
-              if (results.length > 0) setShowResults(true);
+              if (query.trim().length >= 2) setShowResults(true);
             }}
             placeholder="Search for an address, city, or landmark..."
             className="w-full border border-gray-300 rounded-xl pl-10 pr-24 py-3 text-sm focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900 focus:ring-opacity-10 transition-shadow"
@@ -281,11 +322,21 @@ export default function LocationPicker({
 
         {/* ── Autocomplete dropdown ── */}
         {showResults && (
-          <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-50 max-h-60 overflow-y-auto">
-            {results.length === 0 && !loading ? (
+          <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden z-50 max-h-72 overflow-y-auto">
+            {query.trim().length < 2 ? (
+              <div className="px-4 py-3 text-sm text-gray-400 flex items-center gap-2">
+                <Search className="w-4 h-4" />
+                Type at least 2 characters to search
+              </div>
+            ) : loading ? (
+              <div className="px-4 py-4 text-sm text-gray-500 flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Searching...
+              </div>
+            ) : results.length === 0 ? (
               <div className="px-4 py-4 text-sm text-gray-500 flex items-center gap-2">
                 <Search className="w-4 h-4" />
-                No results found
+                No results found for &quot;{query}&quot;
               </div>
             ) : (
               results.map((r, i) => (
@@ -303,6 +354,14 @@ export default function LocationPicker({
           </div>
         )}
       </div>
+
+      {/* ── Geo error ── */}
+      {geoError && (
+        <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span>{geoError}</span>
+        </div>
+      )}
 
       {/* ── Map ── */}
       <div className="relative">

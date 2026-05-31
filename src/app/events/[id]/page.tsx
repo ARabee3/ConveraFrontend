@@ -10,6 +10,7 @@ import { useAuthStore } from "@/store/auth";
 import { formatPrice, formatDate } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Button from "@/components/ui/Button";
+import MapView from "@/components/ui/MapView";
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&q=80";
 
@@ -97,10 +98,20 @@ export default function EventDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Left: Details */}
           <div className="lg:col-span-2 space-y-8">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-3">About this event</h2>
-              <p className="text-gray-600 leading-relaxed">{event.description}</p>
-            </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">About this event</h2>
+            <p className="text-gray-600 leading-relaxed">{event.description}</p>
+          </div>
+
+          {/* Location Map */}
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
+            <MapView
+              lat={event.locationLat}
+              lng={event.locationLng}
+              address={event.address}
+            />
+          </div>
 
             {/* Capacity */}
             <div>
