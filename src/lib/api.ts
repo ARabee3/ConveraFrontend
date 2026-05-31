@@ -187,6 +187,9 @@ export const adminEventsApi = {
 export const bookingsApi = {
   create: (propertyId: string, startDate: string, endDate: string) =>
     api.post<Booking>("/bookings", { propertyId, startDate, endDate }),
+
+  listMe: () =>
+    api.get<Booking[]>("/bookings/me"),
 };
 
 // --- PAYMENTS ---

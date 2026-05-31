@@ -109,6 +109,7 @@ export interface Booking {
   createdAt: string;
   updatedAt?: string;
   property?: Property;
+  transactions?: Transaction[];
 }
 
 export interface Transaction {
