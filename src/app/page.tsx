@@ -105,10 +105,10 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Become a Host</h2>
           <p className="text-gray-500 text-lg mb-8">Earn extra income by sharing your space with travelers from around the world.</p>
           <Link
-            href="/register"
+            href="/register?role=HOST"
             className="inline-flex items-center gap-2 bg-[#FF385C] hover:bg-[#E31C5F] text-white font-semibold px-8 py-4 rounded-xl transition-colors text-lg"
           >
-            Get started <ArrowRight className="w-5 h-5" />
+            Become a Host <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
       </section>
