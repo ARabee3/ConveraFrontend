@@ -1,8 +1,8 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle, Calendar, Home, ArrowRight } from "lucide-react";
+import { CheckCircle, Home, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { bookingsApi } from "@/lib/api";
 import { formatPrice, formatDateRange } from "@/lib/utils";
@@ -13,7 +13,6 @@ const PLACEHOLDER = "https://images.unsplash.com/photo-1497366216548-37526070297
 
 export default function PaymentSuccessPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ["bookings", "me"],

@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Users, Search, Shield, ShieldAlert, ChevronLeft } from "lucide-react";
+import { Search, Shield, ShieldAlert, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { adminApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { formatDate } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import Button from "@/components/ui/Button";
 
 export default function AdminUsersPage() {
   const { user } = useAuthStore();

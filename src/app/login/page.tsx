@@ -11,7 +11,6 @@ import { authApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import type { AuthTokens } from "@/lib/types";
 
 const schema = z.object({
   email: z.string().email("Invalid email"),

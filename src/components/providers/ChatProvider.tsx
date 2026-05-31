@@ -59,7 +59,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setMessages((prev) => [...prev, msg]);
     });
 
-    socket.on("read_receipt", (data: { sessionId: string; lastReadMessageId: string; readerId: string }) => {
+    socket.on("read_receipt", () => {
       // Could update read status here if needed
     });
 

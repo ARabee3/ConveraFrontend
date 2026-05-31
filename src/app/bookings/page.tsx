@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { formatPrice, formatDateRange } from "@/lib/utils";
 import type { BookingStatus } from "@/lib/types";

@@ -12,6 +12,8 @@ import { adminEventsApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import ImageUploader from "@/components/ui/ImageUploader";
+import LocationPicker from "@/components/ui/LocationPicker";
 
 const schema = z.object({
   title: z.string().min(3),
@@ -40,10 +42,15 @@ export default function NewEventPage() {
     if (user.role !== "SYSTEM_ADMIN") router.push("/");
   }, [user, router]);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { locationLat: 30.0444, locationLng: 31.2357, price: 0, maxCapacity: 100 },
   });
+
+  const coverImage = watch("coverImage");
+  const lat = watch("locationLat");
+  const lng = watch("locationLng");
+  const address = watch("address");
 
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
@@ -96,17 +103,25 @@ export default function NewEventPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-800 mb-1.5">Date & Time</label>
+          <label className="block text-sm font-medium text-gray-800 mb-1.5">Date &amp; Time</label>
           <input type="datetime-local" className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-900" {...register("date")} />
           {errors.date && <p className="mt-1 text-xs text-red-500">{errors.date.message}</p>}
         </div>
 
-        <Input id="address" label="Address" placeholder="123 Concert Ave, Cairo" error={errors.address?.message} {...register("address")} />
-
-        <div className="grid grid-cols-2 gap-4">
-          <Input id="locationLat" type="number" step="any" label="Latitude" error={errors.locationLat?.message} {...register("locationLat", { valueAsNumber: true })} />
-          <Input id="locationLng" type="number" step="any" label="Longitude" error={errors.locationLng?.message} {...register("locationLng", { valueAsNumber: true })} />
-        </div>
+        {/* Location Picker */}
+        <LocationPicker
+          lat={lat}
+          lng={lng}
+          address={address}
+          onChange={(loc) => {
+            setValue("address", loc.address);
+            setValue("locationLat", loc.lat);
+            setValue("locationLng", loc.lng);
+          }}
+        />
+        {errors.address && <p className="text-xs text-red-500">{errors.address.message}</p>}
+        {errors.locationLat && <p className="text-xs text-red-500">{errors.locationLat.message}</p>}
+        {errors.locationLng && <p className="text-xs text-red-500">{errors.locationLng.message}</p>}
 
         <div className="grid grid-cols-2 gap-4">
           <Input id="price" type="number" step="0.01" label="Price (EGP)" placeholder="150" error={errors.price?.message} {...register("price", { valueAsNumber: true })} />
@@ -115,7 +130,14 @@ export default function NewEventPage() {
 
         <Input id="categoryId" label="Category ID (UUID)" placeholder="uuid-of-category" error={errors.categoryId?.message} {...register("categoryId")} />
 
-        <Input id="coverImage" type="url" label="Cover image URL" placeholder="https://example.com/cover.jpg" error={errors.coverImage?.message} {...register("coverImage")} />
+        {/* Cover Image Uploader */}
+        <ImageUploader
+          value={coverImage ? [coverImage] : []}
+          onChange={(urls) => setValue("coverImage", urls[0] || "")}
+          maxFiles={1}
+          label="Cover image"
+        />
+        {errors.coverImage && <p className="text-xs text-red-500">{errors.coverImage.message}</p>}
 
         <div className="border-t border-gray-100 pt-4">
           <h3 className="text-sm font-semibold text-gray-800 mb-4">Eligibility (optional)</h3>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ScrollText, ChevronLeft, Filter } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { adminApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";

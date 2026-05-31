@@ -8,7 +8,6 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import Button from "@/components/ui/Button";
 
 interface Preference {
   category: string;

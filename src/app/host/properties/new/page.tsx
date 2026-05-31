@@ -12,6 +12,8 @@ import { hostApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import ImageUploader from "@/components/ui/ImageUploader";
+import LocationPicker from "@/components/ui/LocationPicker";
 
 const schema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -22,7 +24,7 @@ const schema = z.object({
   longitude: z.number().min(-180).max(180),
   basePrice: z.number().positive("Price must be positive"),
   amenitiesStr: z.string().optional(),
-  imageUrlsStr: z.string().optional(),
+  imageUrls: z.array(z.string()).min(1, "At least one image is required"),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -38,10 +40,15 @@ export default function NewPropertyPage() {
     }
   }, [user, router]);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { type: "APARTMENT", latitude: 30.0444, longitude: 31.2357 },
+    defaultValues: { type: "APARTMENT", imageUrls: [] },
   });
+
+  const imageUrls = watch("imageUrls");
+  const lat = watch("latitude");
+  const lng = watch("longitude");
+  const address = watch("address");
 
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
@@ -54,16 +61,12 @@ export default function NewPropertyPage() {
         longitude: data.longitude,
         basePrice: data.basePrice,
         amenities: data.amenitiesStr ? data.amenitiesStr.split(",").map((s) => s.trim()).filter(Boolean) : [],
-        imageUrls: data.imageUrlsStr ? data.imageUrlsStr.split(",").map((s) => s.trim()).filter(Boolean) : [],
+        imageUrls: data.imageUrls,
       }),
     onSuccess: () => router.push("/host/properties"),
   });
 
-  const [serverError, setServerError] = [mutation.error, mutation.reset];
-
-  const onSubmit = async (data: FormData) => {
-    mutation.mutate(data);
-  };
+  const onSubmit = (data: FormData) => mutation.mutate(data);
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -105,12 +108,20 @@ export default function NewPropertyPage() {
           </select>
         </div>
 
-        <Input id="address" label="Address" placeholder="123 Nile Corniche, Cairo" error={errors.address?.message} {...register("address")} />
-
-        <div className="grid grid-cols-2 gap-4">
-          <Input id="latitude" type="number" step="any" label="Latitude" placeholder="30.0444" error={errors.latitude?.message} {...register("latitude", { valueAsNumber: true })} />
-          <Input id="longitude" type="number" step="any" label="Longitude" placeholder="31.2357" error={errors.longitude?.message} {...register("longitude", { valueAsNumber: true })} />
-        </div>
+        {/* Location Picker */}
+        <LocationPicker
+          lat={lat}
+          lng={lng}
+          address={address}
+          onChange={(loc) => {
+            setValue("address", loc.address);
+            setValue("latitude", loc.lat);
+            setValue("longitude", loc.lng);
+          }}
+        />
+        {errors.address && <p className="text-xs text-red-500">{errors.address.message}</p>}
+        {errors.latitude && <p className="text-xs text-red-500">{errors.latitude.message}</p>}
+        {errors.longitude && <p className="text-xs text-red-500">{errors.longitude.message}</p>}
 
         <Input id="basePrice" type="number" step="0.01" label="Price per night (EGP)" placeholder="500" error={errors.basePrice?.message} {...register("basePrice", { valueAsNumber: true })} />
 
@@ -122,13 +133,14 @@ export default function NewPropertyPage() {
           {...register("amenitiesStr")}
         />
 
-        <Input
-          id="imageUrlsStr"
-          label="Image URLs (comma-separated)"
-          placeholder="https://example.com/img1.jpg, https://..."
-          error={errors.imageUrlsStr?.message}
-          {...register("imageUrlsStr")}
+        {/* Image Uploader */}
+        <ImageUploader
+          value={imageUrls || []}
+          onChange={(urls) => setValue("imageUrls", urls)}
+          maxFiles={5}
+          label="Property photos"
         />
+        {errors.imageUrls && <p className="text-xs text-red-500">{errors.imageUrls.message}</p>}
 
         <div className="flex gap-4 pt-2">
           <Button type="submit" isLoading={mutation.isPending} size="lg" className="flex-1">

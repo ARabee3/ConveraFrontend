@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Building2, Search, ChevronLeft, Eye, EyeOff } from "lucide-react";
+import { Search, ChevronLeft, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { adminApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
-import { formatPrice } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function AdminPropertiesPage() {

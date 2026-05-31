@@ -10,7 +10,7 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Button from "@/components/ui/Button";
 
 function EventsContent() {
-  const _params = useSearchParams();
+  const _params = useSearchParams(); // eslint-disable-line @typescript-eslint/no-unused-vars
   const [searchText, setSearchText] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [priceMax, setPriceMax] = useState<number | "">("");

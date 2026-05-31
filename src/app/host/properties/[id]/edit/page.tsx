@@ -12,6 +12,8 @@ import { hostApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import ImageUploader from "@/components/ui/ImageUploader";
+import LocationPicker from "@/components/ui/LocationPicker";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 const schema = z.object({
@@ -23,7 +25,7 @@ const schema = z.object({
   longitude: z.number().min(-180).max(180),
   basePrice: z.number().positive("Price must be positive"),
   amenitiesStr: z.string().optional(),
-  imageUrlsStr: z.string().optional(),
+  imageUrls: z.array(z.string()).min(1, "At least one image is required"),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -49,14 +51,18 @@ export default function EditPropertyPage() {
 
   const property = properties?.find((p) => p.id === id);
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       type: "APARTMENT",
-      latitude: 30.0444,
-      longitude: 31.2357,
+      imageUrls: [],
     },
   });
+
+  const imageUrls = watch("imageUrls");
+  const lat = watch("latitude");
+  const lng = watch("longitude");
+  const address = watch("address");
 
   // Pre-fill form when property loads
   useEffect(() => {
@@ -70,7 +76,7 @@ export default function EditPropertyPage() {
         longitude: property.longitude,
         basePrice: property.basePrice,
         amenitiesStr: property.amenities?.join(", ") || "",
-        imageUrlsStr: property.imageUrls?.join(", ") || "",
+        imageUrls: property.imageUrls || [],
       });
     }
   }, [property, reset]);
@@ -86,7 +92,7 @@ export default function EditPropertyPage() {
         longitude: data.longitude,
         basePrice: data.basePrice,
         amenities: data.amenitiesStr ? data.amenitiesStr.split(",").map((s) => s.trim()).filter(Boolean) : [],
-        imageUrls: data.imageUrlsStr ? data.imageUrlsStr.split(",").map((s) => s.trim()).filter(Boolean) : [],
+        imageUrls: data.imageUrls,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["host-properties"] });
@@ -145,12 +151,20 @@ export default function EditPropertyPage() {
           </select>
         </div>
 
-        <Input id="address" label="Address" placeholder="123 Nile Corniche, Cairo" error={errors.address?.message} {...register("address")} />
-
-        <div className="grid grid-cols-2 gap-4">
-          <Input id="latitude" type="number" step="any" label="Latitude" placeholder="30.0444" error={errors.latitude?.message} {...register("latitude", { valueAsNumber: true })} />
-          <Input id="longitude" type="number" step="any" label="Longitude" placeholder="31.2357" error={errors.longitude?.message} {...register("longitude", { valueAsNumber: true })} />
-        </div>
+        {/* Location Picker */}
+        <LocationPicker
+          lat={lat}
+          lng={lng}
+          address={address}
+          onChange={(loc) => {
+            setValue("address", loc.address);
+            setValue("latitude", loc.lat);
+            setValue("longitude", loc.lng);
+          }}
+        />
+        {errors.address && <p className="text-xs text-red-500">{errors.address.message}</p>}
+        {errors.latitude && <p className="text-xs text-red-500">{errors.latitude.message}</p>}
+        {errors.longitude && <p className="text-xs text-red-500">{errors.longitude.message}</p>}
 
         <Input id="basePrice" type="number" step="0.01" label="Price per night (EGP)" placeholder="500" error={errors.basePrice?.message} {...register("basePrice", { valueAsNumber: true })} />
 
@@ -162,13 +176,14 @@ export default function EditPropertyPage() {
           {...register("amenitiesStr")}
         />
 
-        <Input
-          id="imageUrlsStr"
-          label="Image URLs (comma-separated)"
-          placeholder="https://example.com/img1.jpg, https://..."
-          error={errors.imageUrlsStr?.message}
-          {...register("imageUrlsStr")}
+        {/* Image Uploader */}
+        <ImageUploader
+          value={imageUrls || []}
+          onChange={(urls) => setValue("imageUrls", urls)}
+          maxFiles={5}
+          label="Property photos"
         />
+        {errors.imageUrls && <p className="text-xs text-red-500">{errors.imageUrls.message}</p>}
 
         <div className="flex gap-4 pt-2">
           <Button type="submit" isLoading={mutation.isPending || isSubmitting} size="lg" className="flex-1">

@@ -8,7 +8,6 @@ import {
   Building2,
   Calendar,
   CreditCard,
-  TrendingUp,
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
