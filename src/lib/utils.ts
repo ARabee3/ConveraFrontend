@@ -38,3 +38,8 @@ export function diffDays(start: string, end: string): number {
     return 1;
   }
 }
+
+export function getDisplayName(email: string): string {
+  const local = email.split("@")[0] || email;
+  return local.charAt(0).toUpperCase() + local.slice(1);
+}

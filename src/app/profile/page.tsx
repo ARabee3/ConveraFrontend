@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { User, Mail, Shield, ChevronLeft, Bell } from "lucide-react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/auth";
+import { getDisplayName } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function ProfilePage() {
@@ -35,8 +36,8 @@ export default function ProfilePage() {
           <User className="w-6 h-6 text-[#FF385C]" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-          <p className="text-gray-500 text-sm">Your account information</p>
+          <h1 className="text-2xl font-bold text-gray-900">{getDisplayName(user.email)}</h1>
+          <p className="text-gray-500 text-sm">{user.email}</p>
         </div>
       </div>
 
@@ -47,7 +48,7 @@ export default function ProfilePage() {
             <Mail className="w-5 h-5 text-gray-600" />
           </div>
           <div className="flex-1">
-            <p className="text-sm text-gray-500">Email</p>
+            <p className="text-sm text-gray-500">Email address</p>
             <p className="font-medium text-gray-900">{user.email}</p>
           </div>
         </div>

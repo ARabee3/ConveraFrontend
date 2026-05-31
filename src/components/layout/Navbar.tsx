@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, X, Home } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
+import { getDisplayName } from "@/lib/utils";
 import Badge from "@/components/ui/Badge";
 
 export default function Navbar() {
@@ -60,7 +61,7 @@ export default function Navbar() {
               href="/profile"
               className="text-sm text-gray-600 hidden md:block max-w-[140px] truncate hover:text-[#FF385C]"
             >
-              {user.email}
+              {getDisplayName(user.email)}
             </Link>
             <button
               onClick={handleLogout}
