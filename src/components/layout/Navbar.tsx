@@ -56,7 +56,12 @@ export default function Navbar() {
           </Link>
           <div className="flex items-center gap-2">
             <Badge role={user.role} />
-            <span className="text-sm text-gray-600 hidden md:block max-w-[140px] truncate">{user.email}</span>
+            <Link
+              href="/profile"
+              className="text-sm text-gray-600 hidden md:block max-w-[140px] truncate hover:text-[#FF385C]"
+            >
+              {user.email}
+            </Link>
             <button
               onClick={handleLogout}
               className="text-sm font-semibold border border-gray-300 rounded-full px-4 py-2 hover:shadow-md transition-shadow"
