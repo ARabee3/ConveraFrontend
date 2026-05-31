@@ -37,7 +37,7 @@ export default function NewEventPage() {
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "ADMIN" && user.role !== "SYSTEM_ADMIN") router.push("/");
+    if (user.role !== "SYSTEM_ADMIN") router.push("/");
   }, [user, router]);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({

@@ -18,7 +18,7 @@ export default function AdminEventsPage() {
 
   useEffect(() => {
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "ADMIN" && user.role !== "SYSTEM_ADMIN") {
+    if (user.role !== "SYSTEM_ADMIN") {
       router.push("/");
     }
   }, [user, router]);

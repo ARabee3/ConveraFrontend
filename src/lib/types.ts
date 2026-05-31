@@ -129,6 +129,61 @@ export interface PaymentInitResponse {
   paymentUrl: string;
 }
 
+// --- Admin Types ---
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  role: Role;
+  isVerified: boolean;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface AdminUserDetail extends AdminUser {
+  bookingCount: number;
+  propertyCount: number;
+  lastLoginAt: string | null;
+}
+
+export interface AdminProperty {
+  id: string;
+  title: string;
+  hostId: string;
+  hostEmail: string;
+  address: string;
+  type: string;
+  isActive: boolean;
+  listingStatus: string;
+  bookingCount: number;
+  createdAt: string;
+}
+
+export interface AdminMetrics {
+  users: { total: number; byRole: Record<string, number> };
+  properties: { total: number; active: number };
+  events: { total: number; active: number };
+  bookings: { total: number; byStatus: Record<string, number> };
+  revenue: { total: number; currency: string };
+}
+
+export interface ActivityLog {
+  id: string;
+  actorId: string;
+  actorEmail: string;
+  actionType: string;
+  targetEntityType: string;
+  targetEntityId: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  nextCursor: string | null;
+  total: number;
+}
+
 export interface ApiError {
   message: string;
   statusCode: number;

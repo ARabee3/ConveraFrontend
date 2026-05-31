@@ -7,6 +7,12 @@ import type {
   PaymentInitResponse,
   Property,
   Review,
+  AdminUser,
+  AdminUserDetail,
+  AdminProperty,
+  AdminMetrics,
+  ActivityLog,
+  PaginatedResponse,
 } from "./types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
@@ -196,4 +202,28 @@ export const bookingsApi = {
 export const paymentsApi = {
   initialize: (bookingId: string, provider: "STRIPE" | "PAYMOB") =>
     api.post<PaymentInitResponse>("/payments/initialize", { bookingId, provider }),
+};
+
+// --- ADMIN ---
+export const adminApi = {
+  listUsers: (params?: { cursor?: string; take?: number; role?: string; status?: string; search?: string }) =>
+    api.get<PaginatedResponse<AdminUser>>("/admin/users", { params }),
+
+  getUserDetail: (id: string) =>
+    api.get<AdminUserDetail>(`/admin/users/${id}`),
+
+  changeUserStatus: (id: string, data: { status: string; reason: string }) =>
+    api.patch<AdminUser>(`/admin/users/${id}/status`, data),
+
+  listProperties: (params?: { cursor?: string; take?: number; status?: string; search?: string }) =>
+    api.get<PaginatedResponse<AdminProperty>>("/admin/properties", { params }),
+
+  changePropertyStatus: (id: string, data: { status: string; reason: string }) =>
+    api.patch<AdminProperty>(`/admin/properties/${id}/status`, data),
+
+  getMetrics: () =>
+    api.get<AdminMetrics>("/admin/metrics"),
+
+  getActivityLogs: (params?: { cursor?: string; take?: number; actionType?: string; startDate?: string; endDate?: string }) =>
+    api.get<PaginatedResponse<ActivityLog>>("/admin/activity-logs", { params }),
 };
