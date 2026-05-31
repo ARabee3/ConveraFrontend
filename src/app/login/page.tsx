@@ -34,7 +34,7 @@ export default function LoginPage() {
     setServerError("");
     try {
       const res = await authApi.login(data.email, data.password);
-      setAuth(res.data as AuthTokens);
+      setAuth(res.data.data);
       router.push("/");
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
