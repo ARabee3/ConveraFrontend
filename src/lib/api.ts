@@ -43,11 +43,14 @@ api.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem("convera_refresh_token");
         if (!refreshToken) throw new Error("No refresh token");
-        const { data } = await axios.post<AuthTokens>(`${BASE_URL}/auth/refresh`, { refreshToken });
-        localStorage.setItem("convera_access_token", data.accessToken);
-        localStorage.setItem("convera_refresh_token", data.refreshToken);
-        document.cookie = `convera_token=${data.accessToken}; path=/; SameSite=Lax; max-age=86400`;
-        if (original.headers) original.headers.Authorization = `Bearer ${data.accessToken}`;
+        const { data } = await axios.post<{ data: AuthTokens }>(`${BASE_URL}/auth/refresh`, { refreshToken });
+        const tokens = data.data;
+        localStorage.setItem("convera_access_token", tokens.accessToken);
+        localStorage.setItem("convera_refresh_token", tokens.refreshToken);
+        localStorage.setItem("convera_user", JSON.stringify(tokens.user));
+        document.cookie = `convera_token=${tokens.accessToken}; path=/; SameSite=Lax; max-age=86400`;
+        document.cookie = `convera_role=${tokens.user.role}; path=/; SameSite=Lax; max-age=86400`;
+        if (original.headers) original.headers.Authorization = `Bearer ${tokens.accessToken}`;
         return api(original);
       } catch {
         localStorage.removeItem("convera_access_token");
