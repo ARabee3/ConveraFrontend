@@ -2,128 +2,212 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
-import { CreditCard, Landmark } from "lucide-react";
-import { paymentsApi } from "@/lib/api";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { CreditCard, Landmark, FlaskConical } from "lucide-react";
+import { paymentsApi, bookingsApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Button from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import axios from "axios";
+
+type Provider = "MOCK" | "STRIPE" | "PAYMOB";
 
 export default function PaymentPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
-  const [provider, setProvider] = useState<"STRIPE" | "PAYMOB">("STRIPE");
+  const [provider, setProvider] = useState<Provider>("MOCK");
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!user) router.push("/login");
   }, [user, router]);
 
+  const { data: booking, isLoading: loadingBooking, error: fetchError } = useQuery({
+    queryKey: ["booking", id],
+    queryFn: () => bookingsApi.get(id).then((r) => r.data),
+    enabled: !!user && !!id,
+    retry: false,
+  });
+
   const payMutation = useMutation({
-    mutationFn: () => paymentsApi.initialize(id, provider),
+    mutationFn: () =>
+      paymentsApi.initialize(id, provider as "STRIPE" | "PAYMOB"),
     onSuccess: (res) => {
       window.location.href = res.data.paymentUrl;
     },
     onError: (err: unknown) => {
       const error = err as { response?: { data?: { message?: string } } };
-      setError(error?.response?.data?.message || "Payment initialization failed.");
+      setError(
+        (error?.response?.data?.message || "Payment provider unavailable") +
+          ". Try using Mock Payment instead."
+      );
     },
   });
 
-  if (!user) return <LoadingSpinner fullPage />;
+  const mockMutation = useMutation({
+    mutationFn: () => paymentsApi.confirmMock(id),
+    onSuccess: () => {
+      router.push(`/bookings/${id}/success`);
+    },
+    onError: (err: unknown) => {
+      const error = err as { response?: { data?: { message?: string } } };
+      setError(error?.response?.data?.message || "Mock payment failed. Try again.");
+    },
+  });
+
+  const handlePay = () => {
+    setError("");
+    if (provider === "MOCK") {
+      mockMutation.mutate();
+    } else {
+      payMutation.mutate();
+    }
+  };
+
+  if (!user || loadingBooking) return <LoadingSpinner fullPage />;
+
+  const isUnauthorized = axios.isAxiosError(fetchError) && fetchError.response?.status === 403;
+  const isNotFound = (axios.isAxiosError(fetchError) && fetchError.response?.status === 404) || !booking;
+
+  if (isUnauthorized || (booking && booking.customerId !== user.id)) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-neutral-50 flex items-center justify-center px-4 py-12">
+        <EmptyState
+          icon={<CreditCard className="h-6 w-6" />}
+          title="Unauthorized"
+          description="This booking does not belong to you."
+          action={{ label: "My Bookings", onClick: () => router.push("/bookings") }}
+        />
+      </div>
+    );
+  }
+
+  if (isNotFound) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-neutral-50 flex items-center justify-center px-4 py-12">
+        <EmptyState
+          icon={<CreditCard className="h-6 w-6" />}
+          title="Booking Not Found"
+          description="The booking you are trying to pay for does not exist."
+          action={{ label: "My Bookings", onClick: () => router.push("/bookings") }}
+        />
+      </div>
+    );
+  }
+
+  const providers = [
+    {
+      key: "MOCK" as const,
+      label: "Mock Payment (Instant)",
+      description: "Confirm booking instantly — no real payment",
+      icon: <FlaskConical className="h-5 w-5 text-white" />,
+      iconBg: "bg-amber-500",
+    },
+    {
+      key: "STRIPE" as const,
+      label: "Stripe",
+      description: "Credit/debit card, Apple Pay, Google Pay",
+      icon: <CreditCard className="h-5 w-5 text-white" />,
+      iconBg: "bg-indigo-600",
+    },
+    {
+      key: "PAYMOB" as const,
+      label: "Paymob",
+      description: "Local Egyptian payment gateway",
+      icon: <Landmark className="h-5 w-5 text-white" />,
+      iconBg: "bg-emerald-600",
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-2xl shadow-card p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Complete Payment</h1>
-        <p className="text-gray-500 text-sm mb-8">
-          Booking <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">{id}</span>
+    <div className="min-h-[calc(100vh-4rem)] bg-neutral-50 flex items-center justify-center px-4 py-12">
+      <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-md border border-neutral-100">
+        <h1 className="text-2xl font-bold text-neutral-900 mb-1">
+          Complete Payment
+        </h1>
+        <p className="text-neutral-500 text-sm mb-8">
+          Booking{" "}
+          <span className="font-mono text-xs bg-neutral-100 px-2 py-0.5 rounded text-neutral-600">
+            {id}
+          </span>
         </p>
 
-        {/* Provider Selection */}
-        <div className="mb-8">
-          <p className="text-sm font-semibold text-gray-800 mb-3">Select payment method</p>
-          <div className="space-y-3">
-            {/* Stripe */}
-            <label
-              className={`flex items-center gap-4 border rounded-2xl p-4 cursor-pointer transition-all ${
-                provider === "STRIPE"
-                  ? "border-[#FF385C] bg-red-50"
-                  : "border-gray-200 hover:border-gray-400"
-              }`}
-            >
-              <input
-                type="radio"
-                name="provider"
-                value="STRIPE"
-                checked={provider === "STRIPE"}
-                onChange={() => setProvider("STRIPE")}
-                className="sr-only"
-              />
-              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <CreditCard className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">Stripe</p>
-                <p className="text-xs text-gray-500">Credit/debit card, Apple Pay, Google Pay</p>
-              </div>
-              {provider === "STRIPE" && (
-                <div className="ml-auto w-5 h-5 rounded-full border-2 border-[#FF385C] flex items-center justify-center">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#FF385C]" />
+        <div className="mb-8 space-y-3">
+          <p className="text-sm font-semibold text-neutral-800 mb-3">
+            Select payment method
+          </p>
+          {providers.map((opt) => {
+            const isActive = provider === opt.key;
+            return (
+              <label
+                key={opt.key}
+                className={`flex items-center gap-4 border rounded-2xl p-4 cursor-pointer transition-all duration-150 ${
+                  isActive
+                    ? "border-primary-500 bg-primary-50"
+                    : "border-neutral-200 hover:border-neutral-400"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="provider"
+                  value={opt.key}
+                  checked={isActive}
+                  onChange={() => setProvider(opt.key)}
+                  className="sr-only"
+                />
+                <div
+                  className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${opt.iconBg}`}
+                >
+                  {opt.icon}
                 </div>
-              )}
-            </label>
-
-            {/* Paymob */}
-            <label
-              className={`flex items-center gap-4 border rounded-2xl p-4 cursor-pointer transition-all ${
-                provider === "PAYMOB"
-                  ? "border-[#FF385C] bg-red-50"
-                  : "border-gray-200 hover:border-gray-400"
-              }`}
-            >
-              <input
-                type="radio"
-                name="provider"
-                value="PAYMOB"
-                checked={provider === "PAYMOB"}
-                onChange={() => setProvider("PAYMOB")}
-                className="sr-only"
-              />
-              <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Landmark className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">Paymob</p>
-                <p className="text-xs text-gray-500">Local Egyptian payment gateway</p>
-              </div>
-              {provider === "PAYMOB" && (
-                <div className="ml-auto w-5 h-5 rounded-full border-2 border-[#FF385C] flex items-center justify-center">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#FF385C]" />
+                <div className="flex-1">
+                  <p className="font-semibold text-neutral-900">{opt.label}</p>
+                  <p className="text-xs text-neutral-500">{opt.description}</p>
                 </div>
-              )}
-            </label>
-          </div>
+                <div
+                  className={`ml-auto h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                    isActive ? "border-primary-600" : "border-neutral-300"
+                  }`}
+                >
+                  {isActive && (
+                    <div className="h-2.5 w-2.5 rounded-full bg-primary-600" />
+                  )}
+                </div>
+              </label>
+            );
+          })}
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-6">
+          <div className="bg-error-50 border border-error-200 text-error-700 text-sm px-4 py-3 rounded-xl mb-6">
             {error}
           </div>
         )}
 
         <Button
           className="w-full py-3 text-base"
-          onClick={() => payMutation.mutate()}
-          isLoading={payMutation.isPending}
+          onClick={handlePay}
+          isLoading={payMutation.isPending || mockMutation.isPending}
         >
-          Pay with {provider === "STRIPE" ? "Stripe" : "Paymob"}
+          {provider === "MOCK"
+            ? "Confirm Payment"
+            : `Pay with ${provider === "STRIPE" ? "Stripe" : "Paymob"}`}
         </Button>
 
-        <p className="text-center text-xs text-gray-400 mt-4">
-          You will be redirected to the payment provider to complete your payment.
-        </p>
+        {provider !== "MOCK" && (
+          <p className="text-center text-xs text-neutral-400 mt-4">
+            You will be redirected to the payment provider.
+            <br />
+            <button
+              onClick={() => setProvider("MOCK")}
+              className="text-primary-600 hover:underline mt-1"
+            >
+              Use Mock Payment instead
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );

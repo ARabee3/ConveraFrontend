@@ -33,6 +33,7 @@ export default function ForgotPasswordPage() {
   const [serverError, setServerError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
 
   const emailForm = useForm<EmailForm>({ resolver: zodResolver(emailSchema) });
   const resetForm = useForm<ResetForm>({ resolver: zodResolver(resetSchema) });
@@ -44,9 +45,40 @@ export default function ForgotPasswordPage() {
       setSentEmail(data.email);
       resetForm.setValue("email", data.email);
       setStep(2);
+      setResendTimer(60);
+      const interval = setInterval(() => {
+        setResendTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       setServerError(error?.response?.data?.message || "Failed to send reset code");
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendTimer > 0) return;
+    setServerError("");
+    try {
+      await authApi.forgotPassword(sentEmail);
+      setResendTimer(60);
+      const interval = setInterval(() => {
+        setResendTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setServerError(error?.response?.data?.message || "Failed to resend code");
     }
   };
 
@@ -63,57 +95,81 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-16">
-      <div className="bg-white rounded-2xl shadow-card p-8 w-full max-w-md">
+    <div className="min-h-[calc(100vh-4rem)] bg-neutral-50 flex items-center justify-center px-4 py-16">
+      <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-md border border-neutral-100">
         <div className="flex items-center gap-2 justify-center mb-8">
-          <Home className="w-7 h-7 text-[#FF385C]" />
-          <span className="text-2xl font-bold text-[#FF385C]">convera</span>
+          <Home className="h-7 w-7 text-primary-600" aria-hidden="true" />
+          <span className="text-2xl font-bold text-primary-600 tracking-tight">
+            convera
+          </span>
         </div>
 
         {success ? (
           <div className="text-center">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Password reset!</h2>
-            <p className="text-gray-500 text-sm">Redirecting to login...</p>
+            <CheckCircle className="h-16 w-16 text-success-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-neutral-900 mb-2">
+              Password reset!
+            </h2>
+            <p className="text-neutral-500 text-sm">Redirecting to login...</p>
           </div>
         ) : step === 1 ? (
           <>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Forgot password?</h1>
-            <p className="text-gray-500 text-sm mb-8">Enter your email and we&apos;ll send you a reset code.</p>
+            <h1 className="text-2xl font-bold text-neutral-900 mb-1">
+              Forgot password?
+            </h1>
+            <p className="text-neutral-500 text-sm mb-8">
+              Enter your email and we&apos;ll send you a reset code.
+            </p>
 
             {serverError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-6">{serverError}</div>
+              <div className="bg-error-50 border border-error-200 text-error-700 text-sm px-4 py-3 rounded-xl mb-6">
+                {serverError}
+              </div>
             )}
 
-            <form onSubmit={emailForm.handleSubmit(handleSendCode)} className="space-y-5">
+            <form
+              onSubmit={emailForm.handleSubmit(handleSendCode)}
+              className="space-y-5"
+            >
               <Input
-                id="email"
                 type="email"
                 label="Email address"
                 placeholder="you@example.com"
                 error={emailForm.formState.errors.email?.message}
                 {...emailForm.register("email")}
               />
-              <Button type="submit" className="w-full py-3" isLoading={emailForm.formState.isSubmitting}>
+              <Button
+                type="submit"
+                className="w-full py-3"
+                isLoading={emailForm.formState.isSubmitting}
+              >
                 Send reset code
               </Button>
             </form>
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Reset your password</h1>
-            <p className="text-gray-500 text-sm mb-8">
-              Enter the code sent to <span className="font-medium text-gray-900">{sentEmail}</span> and your new password.
+            <h1 className="text-2xl font-bold text-neutral-900 mb-1">
+              Reset your password
+            </h1>
+            <p className="text-neutral-500 text-sm mb-8">
+              Enter the code sent to{" "}
+              <span className="font-medium text-neutral-900">{sentEmail}</span>{" "}
+              and your new password.
             </p>
 
             {serverError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-6">{serverError}</div>
+              <div className="bg-error-50 border border-error-200 text-error-700 text-sm px-4 py-3 rounded-xl mb-6">
+                {serverError}
+              </div>
             )}
 
-            <form onSubmit={resetForm.handleSubmit(handleReset)} className="space-y-5">
+            <form
+              onSubmit={resetForm.handleSubmit(handleReset)}
+              className="space-y-5"
+            >
               <input type="hidden" {...resetForm.register("email")} />
               <Input
-                id="code"
                 label="Reset code"
                 placeholder="6-digit code"
                 maxLength={6}
@@ -122,7 +178,6 @@ export default function ForgotPasswordPage() {
               />
               <div className="relative">
                 <Input
-                  id="newPassword"
                   type={showPassword ? "text" : "password"}
                   label="New password"
                   placeholder="Create a strong password"
@@ -132,15 +187,36 @@ export default function ForgotPasswordPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-9 text-neutral-400 hover:text-neutral-600 p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </button>
               </div>
-              <Button type="submit" className="w-full py-3" isLoading={resetForm.formState.isSubmitting}>
+              <Button
+                type="submit"
+                className="w-full py-3"
+                isLoading={resetForm.formState.isSubmitting}
+              >
                 Reset password
               </Button>
             </form>
+
+            <div className="mt-6 text-center">
+              <button
+                onClick={handleResend}
+                disabled={resendTimer > 0}
+                className="text-sm text-primary-600 hover:text-primary-700 font-medium disabled:text-neutral-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {resendTimer > 0
+                  ? `Resend code in ${resendTimer}s`
+                  : "Resend code"}
+              </button>
+            </div>
           </>
         )}
       </div>

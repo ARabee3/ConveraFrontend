@@ -15,25 +15,35 @@ import { adminApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { formatPrice } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { Badge } from "@/components/ui/Badge";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
+
+const bookingStatusConfig: Record<string, { variant: "default" | "primary" | "success" | "warning" | "error" | "neutral"; label: string }> = {
+  PENDING_PAYMENT: { variant: "warning", label: "Pending Payment" },
+  CONFIRMED: { variant: "success", label: "Confirmed" },
+  CANCELLED: { variant: "error", label: "Cancelled" },
+  COMPLETED: { variant: "neutral", label: "Completed" },
+};
 
 export default function AdminDashboardPage() {
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "SYSTEM_ADMIN") {
+    if (user.role !== "ADMIN" && user.role !== "SYSTEM_ADMIN") {
       router.push("/");
     }
-  }, [user, router]);
+  }, [user, hydrated, router]);
 
   const { data: metrics, isLoading } = useQuery({
     queryKey: ["admin-metrics"],
     queryFn: () => adminApi.getMetrics().then((r) => r.data),
-    enabled: !!user && user.role === "SYSTEM_ADMIN",
+    enabled: !!user && (user.role === "ADMIN" || user.role === "SYSTEM_ADMIN"),
   });
 
-  if (!user) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user) return <LoadingSpinner fullPage />;
 
   const cards = [
     {
@@ -47,43 +57,44 @@ export default function AdminDashboardPage() {
       title: "Active Properties",
       value: metrics?.properties.active ?? 0,
       icon: Building2,
-      color: "bg-green-500",
+      color: "bg-emerald-500",
       href: "/admin/properties",
     },
     {
       title: "Active Events",
       value: metrics?.events.active ?? 0,
       icon: Calendar,
-      color: "bg-purple-500",
+      color: "bg-violet-500",
       href: "/admin/events",
     },
     {
       title: "Total Revenue",
       value: formatPrice(metrics?.revenue.total ?? 0),
       icon: CreditCard,
-      color: "bg-[#FF385C]",
+      color: "bg-primary-600",
       href: null,
     },
   ];
 
-  const bookingStatusColors: Record<string, string> = {
-    PENDING_PAYMENT: "bg-yellow-100 text-yellow-700",
-    CONFIRMED: "bg-green-100 text-green-700",
-    CANCELLED: "bg-red-100 text-red-700",
-    COMPLETED: "bg-gray-100 text-gray-700",
-  };
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+      <Breadcrumb items={[{ label: "Admin Dashboard" }]} className="mb-6" />
+
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-500 mt-1">Overview of platform metrics</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-neutral-900">
+            Admin Dashboard
+          </h1>
+          <p className="text-neutral-500 mt-1">Overview of platform metrics</p>
         </div>
       </div>
 
       {isLoading ? (
-        <LoadingSpinner fullPage />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-white border border-neutral-200 rounded-2xl p-6 animate-pulse h-32" />
+          ))}
+        </div>
       ) : (
         <>
           {/* Metric Cards */}
@@ -91,33 +102,36 @@ export default function AdminDashboardPage() {
             {cards.map((card) => (
               <div
                 key={card.title}
-                className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-card transition-shadow"
+                className="bg-white border border-neutral-200 rounded-2xl p-6 hover:shadow-md transition-shadow duration-150"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`w-10 h-10 ${card.color} rounded-lg flex items-center justify-center`}>
-                    <card.icon className="w-5 h-5 text-white" />
+                  <div className={`h-10 w-10 ${card.color} rounded-lg flex items-center justify-center`}>
+                    <card.icon className="h-5 w-5 text-white" aria-hidden="true" />
                   </div>
                   {card.href && (
-                    <Link href={card.href} className="text-xs text-gray-400 hover:text-[#FF385C] flex items-center gap-1">
-                      View <ArrowRight className="w-3 h-3" />
+                    <Link
+                      href={card.href}
+                      className="text-xs text-neutral-400 hover:text-primary-600 flex items-center gap-1 transition-colors"
+                    >
+                      View <ArrowRight className="h-3 w-3" />
                     </Link>
                   )}
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-                <p className="text-sm text-gray-500">{card.title}</p>
+                <p className="text-2xl font-bold text-neutral-900">{card.value}</p>
+                <p className="text-sm text-neutral-500">{card.title}</p>
               </div>
             ))}
           </div>
 
           {/* Users by Role */}
           {metrics?.users.byRole && (
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Users by Role</h2>
+            <div className="bg-white border border-neutral-200 rounded-2xl p-6 mb-6">
+              <h2 className="text-lg font-bold text-neutral-900 mb-4">Users by Role</h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {Object.entries(metrics.users.byRole).map(([role, count]) => (
-                  <div key={role} className="bg-gray-50 rounded-xl p-4 text-center">
-                    <p className="text-xl font-bold text-gray-900">{count}</p>
-                    <p className="text-xs text-gray-500 uppercase">{role}</p>
+                  <div key={role} className="bg-neutral-50 rounded-xl p-4 text-center border border-neutral-100">
+                    <p className="text-xl font-bold text-neutral-900">{count}</p>
+                    <p className="text-xs text-neutral-500 uppercase tracking-wider">{role}</p>
                   </div>
                 ))}
               </div>
@@ -126,15 +140,20 @@ export default function AdminDashboardPage() {
 
           {/* Bookings by Status */}
           {metrics?.bookings.byStatus && (
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Bookings by Status</h2>
+            <div className="bg-white border border-neutral-200 rounded-2xl p-6 mb-6">
+              <h2 className="text-lg font-bold text-neutral-900 mb-4">Bookings by Status</h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {Object.entries(metrics.bookings.byStatus).map(([status, count]) => (
-                  <div key={status} className={`rounded-xl p-4 text-center ${bookingStatusColors[status] || "bg-gray-100 text-gray-700"}`}>
-                    <p className="text-xl font-bold">{count}</p>
-                    <p className="text-xs">{status.replace("_", " ")}</p>
-                  </div>
-                ))}
+                {Object.entries(metrics.bookings.byStatus).map(([status, count]) => {
+                  const cfg = bookingStatusConfig[status] || { variant: "neutral" as const, label: status };
+                  return (
+                    <div key={status} className="rounded-xl p-4 text-center bg-neutral-50 border border-neutral-100">
+                      <p className="text-xl font-bold text-neutral-900">{count}</p>
+                      <div className="mt-1">
+                        <Badge variant={cfg.variant} size="sm">{cfg.label}</Badge>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -145,15 +164,16 @@ export default function AdminDashboardPage() {
               { label: "Manage Users", href: "/admin/users" },
               { label: "Manage Properties", href: "/admin/properties" },
               { label: "Manage Events", href: "/admin/events" },
+              { label: "Manage Categories", href: "/admin/categories" },
               { label: "Activity Logs", href: "/admin/activity-logs" },
             ].map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-card transition-shadow flex items-center justify-between"
+                className="bg-white border border-neutral-200 rounded-2xl p-5 hover:shadow-md transition-shadow duration-150 flex items-center justify-between"
               >
-                <span className="font-medium text-gray-900">{link.label}</span>
-                <ArrowRight className="w-4 h-4 text-gray-400" />
+                <span className="font-medium text-neutral-900">{link.label}</span>
+                <ArrowRight className="h-4 w-4 text-neutral-400" aria-hidden="true" />
               </Link>
             ))}
           </div>

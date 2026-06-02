@@ -1,17 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MapPin, Wifi, Star, ChevronLeft, Send } from "lucide-react";
-import Link from "next/link";
+import { MapPin, Wifi, Star, Send } from "lucide-react";
+import { SafeImage } from "@/components/ui/SafeImage";
+import useEmblaCarousel from "embla-carousel-react";
 import { propertiesApi, bookingsApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { formatPrice, formatDate, diffDays } from "@/lib/utils";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { Skeleton, SkeletonText } from "@/components/ui/Skeleton";
+import { Avatar } from "@/components/ui/Avatar";
+import { EmptyState } from "@/components/ui/EmptyState";
 import StarRating from "@/components/ui/StarRating";
 import Button from "@/components/ui/Button";
 import MapView from "@/components/ui/MapView";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80";
 
@@ -20,15 +25,29 @@ export default function PropertyDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [bookingError, setBookingError] = useState("");
-
-  // Review form state
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewError, setReviewError] = useState("");
   const [reviewSuccess, setReviewSuccess] = useState(false);
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    emblaApi.on("select", onSelect);
+    return () => { emblaApi.off("select", onSelect); };
+  }, [emblaApi, onSelect]);
 
   const { data: property, isLoading } = useQuery({
     queryKey: ["property", id],
@@ -47,7 +66,6 @@ export default function PropertyDetailPage() {
   );
 
   const hasReviewed = property?.reviews?.some((r) => r.userId === user?.id);
-
   const canReview = user && confirmedBooking && !hasReviewed;
 
   const reviewMutation = useMutation({
@@ -93,9 +111,53 @@ export default function PropertyDetailPage() {
   const nights = checkIn && checkOut ? diffDays(checkIn, checkOut) : 0;
   const total = property ? nights * property.basePrice : 0;
 
+  useEffect(() => {
+    if (!checkIn || !checkOut) {
+      setBookingError("");
+      return;
+    }
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    if (end <= start) {
+      setBookingError("Check-out must be after check-in.");
+      return;
+    }
+
+    // Check blocked overrides
+    const isBlocked = property?.availabilityOverrides?.some((ao) => {
+      if (ao.status !== "BLOCKED") return false;
+      const aoStart = new Date(ao.startDate);
+      const aoEnd = new Date(ao.endDate);
+      return aoStart < end && aoEnd > start;
+    });
+
+    if (isBlocked) {
+      setBookingError("This property is blocked by the host for some of the selected dates.");
+      return;
+    }
+
+    // Check overlapping bookings
+    const isBooked = property?.bookings?.some((b) => {
+      const bStart = new Date(b.startDate);
+      const bEnd = new Date(b.endDate);
+      return bStart < end && bEnd > start;
+    });
+
+    if (isBooked) {
+      setBookingError("Some of the selected dates are already booked.");
+      return;
+    }
+
+    setBookingError("");
+  }, [checkIn, checkOut, property]);
+
   const handleReserve = () => {
     if (!user) {
       router.push("/login");
+      return;
+    }
+    if (user.id === property?.hostId) {
+      setBookingError("You cannot book your own property.");
       return;
     }
     if (!checkIn || !checkOut) {
@@ -106,88 +168,183 @@ export default function PropertyDetailPage() {
       setBookingError("Check-out must be after check-in.");
       return;
     }
+    
+    // Final validation check to prevent mutate if error is active
+    const start = new Date(checkIn);
+    const end = new Date(checkOut);
+    const isBlocked = property?.availabilityOverrides?.some((ao) => {
+      if (ao.status !== "BLOCKED") return false;
+      const aoStart = new Date(ao.startDate);
+      const aoEnd = new Date(ao.endDate);
+      return aoStart < end && aoEnd > start;
+    });
+    if (isBlocked) {
+      setBookingError("This property is blocked by the host for some of the selected dates.");
+      return;
+    }
+
+    const isBooked = property?.bookings?.some((b) => {
+      const bStart = new Date(b.startDate);
+      const bEnd = new Date(b.endDate);
+      return bStart < end && bEnd > start;
+    });
+    if (isBooked) {
+      setBookingError("Some of the selected dates are already booked.");
+      return;
+    }
+
     setBookingError("");
     bookMutation.mutate();
   };
 
-  if (isLoading) return <LoadingSpinner fullPage />;
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Skeleton className="h-6 w-32 mb-6" />
+        <SkeletonText lines={2} className="max-w-md mb-6" />
+        <Skeleton className="aspect-video rounded-2xl mb-10" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          <div className="lg:col-span-2 space-y-8">
+            <SkeletonText lines={4} />
+            <Skeleton className="aspect-video rounded-2xl" />
+          </div>
+          <Skeleton className="h-80 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
 
-  if (!property) return (
-    <div className="text-center py-20">
-      <p className="text-gray-500">Property not found.</p>
-      <Link href="/properties" className="text-[#FF385C] mt-4 inline-block">← Back to properties</Link>
-    </div>
-  );
+  if (!property) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <EmptyState
+          icon={<MapPin className="h-6 w-6" />}
+          title="Property not found"
+          description="The property you are looking for does not exist or has been removed."
+          action={{ label: "Browse properties", onClick: () => router.push("/properties") }}
+        />
+      </div>
+    );
+  }
+
+  const images = property.imageUrls?.length
+    ? property.imageUrls
+    : [PLACEHOLDER];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Back */}
-      <Link href="/properties" className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 mb-6">
-        <ChevronLeft className="w-4 h-4" /> Back to properties
-      </Link>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+      <Breadcrumb
+        items={[
+          { label: "Properties", href: "/properties" },
+          { label: property.title },
+        ]}
+        className="mb-6"
+      />
 
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">{property.title}</h1>
-      <div className="flex items-center gap-4 text-sm text-gray-500 mb-6">
+      <h1 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-2 leading-tight">
+        {property.title}
+      </h1>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-neutral-500 mb-6 md:mb-8">
         <div className="flex items-center gap-1">
-          <MapPin className="w-4 h-4" />{property.address}
+          <MapPin className="h-4 w-4" aria-hidden="true" />
+          {property.address}
         </div>
         {property.avgRating !== undefined && property.avgRating > 0 && (
           <StarRating rating={property.avgRating} size="sm" />
         )}
-        <span className="bg-gray-100 px-2 py-0.5 rounded-full text-xs font-medium">
+        <span className="bg-neutral-100 px-2.5 py-0.5 rounded-full text-xs font-medium text-neutral-700">
           {property.type === "APARTMENT" ? "Apartment" : "Hotel"}
         </span>
       </div>
 
-      {/* Image gallery */}
-      <div className="grid grid-cols-4 grid-rows-2 gap-2 rounded-2xl overflow-hidden h-[420px] mb-10">
-        <div className="col-span-2 row-span-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={property.imageUrls?.[0] || PLACEHOLDER}
-            alt={property.title}
-            className="w-full h-full object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER; }}
-          />
+      {/* Image Gallery */}
+      {isMobile ? (
+        <div className="mb-8 md:mb-10 -mx-4">
+          <div className="overflow-hidden" ref={emblaRef}>
+            <div className="flex">
+              {images.slice(0, 5).map((src, idx) => (
+                <div key={idx} className="min-w-full relative aspect-[4/3]">
+                  <SafeImage
+                    src={src}
+                    alt={`${property.title} image ${idx + 1}`}
+                    containerClassName="h-full w-full"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-center gap-1.5 mt-3">
+            {images.slice(0, 5).map((_, idx) => (
+              <button
+                key={idx}
+                className={`h-1.5 rounded-full transition-all duration-200 ${
+                  idx === selectedIndex ? "w-6 bg-primary-600" : "w-1.5 bg-neutral-300"
+                }`}
+                aria-label={`Go to image ${idx + 1}`}
+              />
+            ))}
+          </div>
         </div>
-        {[1, 2, 3, 4].map((idx) => (
-          <div key={idx} className="overflow-hidden bg-gray-100">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={property.imageUrls?.[idx] || PLACEHOLDER}
-              alt=""
-              className="w-full h-full object-cover"
-              onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER; }}
+      ) : (
+        <div className="grid grid-cols-4 grid-rows-2 gap-2 rounded-2xl overflow-hidden h-[420px] mb-10">
+          <div className="col-span-2 row-span-2 relative bg-neutral-100">
+            <SafeImage
+              src={images[0]}
+              alt={property.title}
+              containerClassName="h-full w-full"
             />
           </div>
-        ))}
-      </div>
+          {[1, 2, 3, 4].map((idx) => (
+            <div key={idx} className="relative overflow-hidden bg-neutral-100">
+              <SafeImage
+                src={images[idx] || PLACEHOLDER}
+                alt={`${property.title} view ${idx}`}
+                containerClassName="h-full w-full"
+                className="hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
         {/* Left: Details */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-10">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">About this place</h2>
-            <p className="text-gray-600 leading-relaxed">{property.description}</p>
+            <h2 className="text-xl md:text-2xl font-bold text-neutral-900 mb-3">
+              About this place
+            </h2>
+            <p className="text-neutral-600 leading-relaxed text-base">
+              {property.description}
+            </p>
           </div>
 
           {/* Location Map */}
           <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Where you&apos;ll be</h2>
-            <MapView
-              lat={property.latitude}
-              lng={property.longitude}
-              address={property.address}
-            />
+            <h2 className="text-xl md:text-2xl font-bold text-neutral-900 mb-4">
+              Where you&apos;ll be
+            </h2>
+            <div className="rounded-2xl overflow-hidden border border-neutral-200">
+              <MapView
+                lat={property.latitude}
+                lng={property.longitude}
+                address={property.address}
+              />
+            </div>
           </div>
 
           {property.amenities?.length > 0 && (
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">What this place offers</h2>
-              <div className="grid grid-cols-2 gap-3">
+              <h2 className="text-xl md:text-2xl font-bold text-neutral-900 mb-4">
+                What this place offers
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {property.amenities.map((a) => (
-                  <div key={a} className="flex items-center gap-2 text-gray-700">
-                    <Wifi className="w-4 h-4 text-gray-400" />
+                  <div
+                    key={a}
+                    className="flex items-center gap-2.5 text-neutral-700 bg-neutral-50 rounded-xl px-3 py-2.5"
+                  >
+                    <Wifi className="h-4 w-4 text-neutral-400" aria-hidden="true" />
                     <span className="text-sm">{a}</span>
                   </div>
                 ))}
@@ -196,29 +353,34 @@ export default function PropertyDetailPage() {
           )}
 
           {canReview && (
-            <div className="bg-gray-50 rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Write a review</h2>
+            <div className="bg-neutral-50 rounded-2xl p-6 border border-neutral-100">
+              <h2 className="text-xl font-bold text-neutral-900 mb-4">
+                Write a review
+              </h2>
               {reviewSuccess ? (
-                <div className="bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl">
+                <div className="bg-success-50 border border-success-200 text-success-700 text-sm px-4 py-3 rounded-xl">
                   Thank you for your review!
                 </div>
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Your rating</p>
+                    <p className="text-sm font-medium text-neutral-700 mb-2">
+                      Your rating
+                    </p>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
                           type="button"
                           onClick={() => setReviewRating(star)}
-                          className="focus:outline-none"
+                          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 rounded-sm p-0.5"
+                          aria-label={`Rate ${star} stars`}
                         >
                           <Star
-                            className={`w-6 h-6 ${
+                            className={`w-7 h-7 transition-colors duration-150 ${
                               star <= reviewRating
-                                ? "fill-[#FF385C] text-[#FF385C]"
-                                : "text-gray-300"
+                                ? "fill-primary-500 text-primary-500"
+                                : "text-neutral-300"
                             }`}
                           />
                         </button>
@@ -226,7 +388,7 @@ export default function PropertyDetailPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <label className="block text-sm font-medium text-neutral-700 mb-1.5">
                       Your experience (optional)
                     </label>
                     <textarea
@@ -234,18 +396,18 @@ export default function PropertyDetailPage() {
                       placeholder="Share details of your stay..."
                       value={reviewComment}
                       onChange={(e) => setReviewComment(e.target.value)}
-                      className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-900 resize-none"
+                      className="w-full border border-neutral-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 resize-none transition-all"
                     />
                   </div>
                   {reviewError && (
-                    <p className="text-red-500 text-xs">{reviewError}</p>
+                    <p className="text-error-600 text-sm">{reviewError}</p>
                   )}
                   <Button
                     onClick={handleSubmitReview}
                     isLoading={reviewMutation.isPending}
-                    className="gap-2"
+                    leftIcon={<Send className="w-4 h-4" />}
                   >
-                    <Send className="w-4 h-4" /> Submit Review
+                    Submit Review
                   </Button>
                 </div>
               )}
@@ -254,23 +416,28 @@ export default function PropertyDetailPage() {
 
           {property.reviews && property.reviews.length > 0 && (
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Star className="w-5 h-5 fill-[#FF385C] text-[#FF385C]" />
+              <h2 className="text-xl md:text-2xl font-bold text-neutral-900 mb-5 flex items-center gap-2">
+                <Star className="w-5 h-5 fill-primary-500 text-primary-500" aria-hidden="true" />
                 {property.avgRating?.toFixed(1)} · {property.reviews.length} reviews
               </h2>
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {property.reviews.map((r) => (
-                  <div key={r.id} className="border-b border-gray-100 pb-4 last:border-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600">
-                        G
-                      </div>
+                  <div
+                    key={r.id}
+                    className="border-b border-neutral-100 pb-5 last:border-0"
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <Avatar name={r.userId ? `User ${r.userId.slice(0, 4)}` : "Guest"} size="md" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{formatDate(r.createdAt)}</p>
+                        <p className="text-sm font-medium text-neutral-900">
+                          {formatDate(r.createdAt)}
+                        </p>
                         <StarRating rating={r.rating} size="sm" showValue={false} />
                       </div>
                     </div>
-                    {r.comment && <p className="text-sm text-gray-600">{r.comment}</p>}
+                    {r.comment && (
+                      <p className="text-sm text-neutral-600 leading-relaxed">{r.comment}</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -279,60 +446,110 @@ export default function PropertyDetailPage() {
         </div>
 
         {/* Right: Booking widget */}
-        <div>
-          <div className="sticky top-24 bg-white border border-gray-200 rounded-2xl shadow-card p-6">
-            <div className="flex items-end gap-1 mb-6">
-              <span className="text-2xl font-bold text-gray-900">{formatPrice(property.basePrice)}</span>
-              <span className="text-gray-500 text-sm mb-0.5">/ night</span>
-            </div>
-
-            <div className="border border-gray-300 rounded-xl overflow-hidden mb-3">
-              <div className="grid grid-cols-2 divide-x divide-gray-300">
-                <div className="p-3">
-                  <p className="text-[10px] font-bold uppercase text-gray-800 mb-1">Check-in</p>
-                  <input
-                    type="date"
-                    value={checkIn}
-                    onChange={(e) => setCheckIn(e.target.value)}
-                    className="text-sm w-full outline-none cursor-pointer"
-                    min={new Date().toISOString().split("T")[0]}
-                  />
-                </div>
-                <div className="p-3">
-                  <p className="text-[10px] font-bold uppercase text-gray-800 mb-1">Check-out</p>
-                  <input
-                    type="date"
-                    value={checkOut}
-                    onChange={(e) => setCheckOut(e.target.value)}
-                    className="text-sm w-full outline-none cursor-pointer"
-                    min={checkIn || new Date().toISOString().split("T")[0]}
-                  />
-                </div>
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <div className="bg-white border border-neutral-200 rounded-2xl shadow-md p-6">
+            {!property.isActive ? (
+              <div className="text-center py-4">
+                <p className="text-sm font-semibold text-error-600 mb-2">
+                  This property is currently unavailable
+                </p>
+                <p className="text-xs text-neutral-500">
+                  Check back later or browse other properties.
+                </p>
               </div>
-            </div>
+            ) : user && user.id === property.hostId ? (
+              <div className="text-center py-4">
+                <p className="text-sm font-semibold text-neutral-700 mb-2">
+                  This is your property
+                </p>
+                <p className="text-xs text-neutral-500">
+                  You cannot book your own listing.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-end gap-1 mb-6">
+                  <span className="text-2xl font-bold text-neutral-900">
+                    {formatPrice(property.basePrice)}
+                  </span>
+                  <span className="text-neutral-500 text-sm mb-0.5">/ night</span>
+                </div>
 
-            {bookingError && (
-              <p className="text-red-500 text-xs mb-3">{bookingError}</p>
+                <div className="border border-neutral-200 rounded-xl overflow-hidden mb-3">
+                  <div className="grid grid-cols-2 divide-x divide-neutral-200">
+                    <div className="p-3">
+                      <label className="block text-xs font-bold uppercase text-neutral-800 mb-1 tracking-wider">
+                        Check-in
+                      </label>
+                      <input
+                        type="date"
+                        value={checkIn}
+                        onChange={(e) => setCheckIn(e.target.value)}
+                        className="text-sm w-full outline-none cursor-pointer text-neutral-700 bg-transparent"
+                        min={new Date().toLocaleDateString('en-CA')}
+                      />
+                    </div>
+                    <div className="p-3">
+                      <label className="block text-xs font-bold uppercase text-neutral-800 mb-1 tracking-wider">
+                        Check-out
+                      </label>
+                      <input
+                        type="date"
+                        value={checkOut}
+                        onChange={(e) => setCheckOut(e.target.value)}
+                        className="text-sm w-full outline-none cursor-pointer text-neutral-700 bg-transparent"
+                        min={checkIn || new Date().toLocaleDateString('en-CA')}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {bookingError && (
+                  <p className="text-error-600 text-sm mb-3">{bookingError}</p>
+                )}
+
+                <Button
+                  className="w-full py-3 text-base"
+                  onClick={handleReserve}
+                  isLoading={bookMutation.isPending}
+                >
+                  {user ? "Reserve" : "Log in to reserve"}
+                </Button>
+
+                {nights > 0 && (
+                  <div className="mt-5 space-y-2 text-sm text-neutral-600">
+                    <div className="flex justify-between">
+                      <span>
+                        {formatPrice(property.basePrice)} × {nights} nights
+                      </span>
+                      <span>{formatPrice(total)}</span>
+                    </div>
+                    <div className="border-t border-neutral-200 pt-2 flex justify-between font-semibold text-neutral-900">
+                      <span>Total</span>
+                      <span>{formatPrice(total)}</span>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
-            <Button
-              className="w-full py-3 text-base"
-              onClick={handleReserve}
-              isLoading={bookMutation.isPending}
-            >
-              {user ? "Reserve" : "Log in to reserve"}
-            </Button>
-
-            {nights > 0 && (
-              <div className="mt-4 space-y-2 text-sm text-gray-600">
-                <div className="flex justify-between">
-                  <span>{formatPrice(property.basePrice)} × {nights} nights</span>
-                  <span>{formatPrice(total)}</span>
-                </div>
-                <div className="border-t border-gray-200 pt-2 flex justify-between font-semibold text-gray-900">
-                  <span>Total</span>
-                  <span>{formatPrice(total)}</span>
-                </div>
+            {/* Message Host — pre-booking chat */}
+            {user && user.id !== property.hostId && (
+              <div className="mt-4 pt-4 border-t border-neutral-100">
+                <button
+                  onClick={async () => {
+                    try {
+                      const { chatApi } = await import("@/lib/api");
+                      const res = await chatApi.createSession(property.id);
+                      router.push(`/chat/${res.data.sessionId}`);
+                    } catch {
+                      router.push("/chat");
+                    }
+                  }}
+                  className="w-full text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-xl py-3 transition-colors"
+                >
+                  Message Host
+                </button>
               </div>
             )}
           </div>

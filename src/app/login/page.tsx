@@ -25,7 +25,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState("");
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
@@ -42,26 +46,29 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-16">
-      <div className="bg-white rounded-2xl shadow-card p-8 w-full max-w-md">
+    <div className="min-h-[calc(100vh-4rem)] bg-neutral-50 flex items-center justify-center px-4 py-16">
+      <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-md border border-neutral-100">
         {/* Logo */}
         <div className="flex items-center gap-2 justify-center mb-8">
-          <Home className="w-7 h-7 text-[#FF385C]" />
-          <span className="text-2xl font-bold text-[#FF385C]">convera</span>
+          <Home className="h-7 w-7 text-primary-600" aria-hidden="true" />
+          <span className="text-2xl font-bold text-primary-600 tracking-tight">
+            convera
+          </span>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back</h1>
-        <p className="text-gray-500 text-sm mb-8">Log in to your Convera account</p>
+        <h1 className="text-2xl font-bold text-neutral-900 mb-1">Welcome back</h1>
+        <p className="text-neutral-500 text-sm mb-8">
+          Log in to your Convera account
+        </p>
 
         {serverError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-6">
+          <div className="bg-error-50 border border-error-200 text-error-700 text-sm px-4 py-3 rounded-xl mb-6">
             {serverError}
           </div>
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <Input
-            id="email"
             type="email"
             label="Email address"
             placeholder="you@example.com"
@@ -71,7 +78,6 @@ export default function LoginPage() {
 
           <div className="relative">
             <Input
-              id="password"
               type={showPassword ? "text" : "password"}
               label="Password"
               placeholder="Enter your password"
@@ -81,14 +87,22 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-9 text-neutral-400 hover:text-neutral-600 p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           </div>
 
           <div className="flex justify-end">
-            <Link href="/forgot-password" className="text-sm text-[#FF385C] hover:underline font-medium">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors"
+            >
               Forgot password?
             </Link>
           </div>
@@ -98,10 +112,13 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <div className="border-t border-gray-100 mt-8 pt-6 text-center">
-          <p className="text-sm text-gray-500">
+        <div className="border-t border-neutral-100 mt-8 pt-6 text-center">
+          <p className="text-sm text-neutral-500">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-[#FF385C] font-semibold hover:underline">
+            <Link
+              href="/register"
+              className="text-primary-600 font-semibold hover:text-primary-700 transition-colors"
+            >
               Sign up
             </Link>
           </p>

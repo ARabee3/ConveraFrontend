@@ -2,44 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --airbnb-red: #FF385C;
-  --airbnb-dark: #222222;
-  --airbnb-gray: #717171;
-}
+@import url("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css");
 
-* {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  color: var(--airbnb-dark);
-  background: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #f1f1f1; }
-::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #aaaaaa; }
-
-@layer components {
-  .btn-primary {
-    @apply bg-[#FF385C] hover:bg-[#E31C5F] text-white font-semibold rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 220 13% 9%;
+    --primary: 346 77% 50%;
+    --primary-foreground: 0 0% 100%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --border: 220 13% 91%;
+    --ring: 346 77% 50%;
+    --radius: 0.5rem;
   }
-  .btn-secondary {
-    @apply border border-gray-800 text-gray-800 hover:bg-gray-50 font-semibold rounded-lg transition-colors duration-200;
+
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  .card {
-    @apply bg-white rounded-2xl shadow-card hover:shadow-card-hover transition-shadow duration-200;
+
+  body {
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
   }
-  .input-base {
-    @apply w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900 focus:ring-opacity-20 transition-all;
+
+  /* Firefox / Windows scrollbar support */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
+  }
+
+  /* WebKit scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+
+  /* Selection theming */
+  ::selection {
+    background-color: #fecdd3;
+    color: #881337;
+  }
+
+  /* Focus visible defaults */
+  :focus-visible {
+    outline: 2px solid #e11d48;
+    outline-offset: 2px;
   }
 }
 
 @layer utilities {
-  .text-balance { text-wrap: balance; }
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Shimmer gradient for skeletons */
+  .bg-shimmer {
+    background: linear-gradient(
+      90deg,
+      #e5e7eb 0%,
+      #f3f4f6 50%,
+      #e5e7eb 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  /* Safe area utilities for fixed elements */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }

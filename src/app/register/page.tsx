@@ -12,21 +12,23 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
-const schema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Must contain an uppercase letter")
-    .regex(/[a-z]/, "Must contain a lowercase letter")
-    .regex(/[0-9]/, "Must contain a number")
-    .regex(/[^A-Za-z0-9]/, "Must contain a special character"),
-  confirmPassword: z.string(),
-  role: z.enum(["CUSTOMER", "HOST"]),
-}).refine((d) => d.password === d.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const schema = z
+  .object({
+    email: z.string().email("Invalid email address"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Must contain an uppercase letter")
+      .regex(/[a-z]/, "Must contain a lowercase letter")
+      .regex(/[0-9]/, "Must contain a number")
+      .regex(/[^A-Za-z0-9]/, "Must contain a special character"),
+    confirmPassword: z.string(),
+    role: z.enum(["CUSTOMER", "HOST"]),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type FormData = z.infer<typeof schema>;
 
@@ -36,9 +38,16 @@ function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState("");
 
-  const defaultRole = searchParams.get("role") === "HOST" ? "HOST" : "CUSTOMER";
+  const defaultRole =
+    searchParams.get("role") === "HOST" ? "HOST" : "CUSTOMER";
 
-  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { role: defaultRole },
   });
@@ -52,23 +61,32 @@ function RegisterForm() {
       router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
-      setServerError(error?.response?.data?.message || "Registration failed. Please try again.");
+      setServerError(
+        error?.response?.data?.message || "Registration failed. Please try again."
+      );
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-16">
-      <div className="bg-white rounded-2xl shadow-card p-8 w-full max-w-md">
+    <div className="min-h-[calc(100vh-4rem)] bg-neutral-50 flex items-center justify-center px-4 py-16">
+      <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-md border border-neutral-100">
         <div className="flex items-center gap-2 justify-center mb-8">
-          <Home className="w-7 h-7 text-[#FF385C]" />
-          <span className="text-2xl font-bold text-[#FF385C]">convera</span>
+          <Home className="h-7 w-7 text-primary-600" aria-hidden="true" />
+          <span className="text-2xl font-bold text-primary-600 tracking-tight">
+            convera
+          </span>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Create an account</h1>
-        <p className="text-gray-500 text-sm mb-8">Join Convera to start {selectedRole === "HOST" ? "hosting" : "booking and exploring"}</p>
+        <h1 className="text-2xl font-bold text-neutral-900 mb-1">
+          Create an account
+        </h1>
+        <p className="text-neutral-500 text-sm mb-8">
+          Join Convera to start{" "}
+          {selectedRole === "HOST" ? "hosting" : "booking and exploring"}
+        </p>
 
         {serverError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-6">
+          <div className="bg-error-50 border border-error-200 text-error-700 text-sm px-4 py-3 rounded-xl mb-6">
             {serverError}
           </div>
         )}
@@ -76,44 +94,81 @@ function RegisterForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Role Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-800 mb-2">I want to...</label>
+            <label className="block text-sm font-medium text-neutral-800 mb-2">
+              I want to...
+            </label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setValue("role", "CUSTOMER")}
-                className={`flex items-center gap-3 border rounded-xl p-3 transition-all ${
+                className={`flex items-center gap-3 border rounded-xl p-3 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                   selectedRole === "CUSTOMER"
-                    ? "border-[#FF385C] bg-red-50"
-                    : "border-gray-200 hover:border-gray-400"
+                    ? "border-primary-500 bg-primary-50"
+                    : "border-neutral-200 hover:border-neutral-400"
                 }`}
+                aria-pressed={selectedRole === "CUSTOMER"}
               >
-                <User className={`w-5 h-5 ${selectedRole === "CUSTOMER" ? "text-[#FF385C]" : "text-gray-500"}`} />
+                <User
+                  className={`h-5 w-5 ${
+                    selectedRole === "CUSTOMER"
+                      ? "text-primary-600"
+                      : "text-neutral-500"
+                  }`}
+                  aria-hidden="true"
+                />
                 <div className="text-left">
-                  <p className={`text-sm font-semibold ${selectedRole === "CUSTOMER" ? "text-[#FF385C]" : "text-gray-900"}`}>Book stays</p>
-                  <p className="text-[10px] text-gray-500">Find properties & events</p>
+                  <p
+                    className={`text-sm font-semibold ${
+                      selectedRole === "CUSTOMER"
+                        ? "text-primary-700"
+                        : "text-neutral-900"
+                    }`}
+                  >
+                    Book stays
+                  </p>
+                  <p className="text-xs text-neutral-500">
+                    Find properties & events
+                  </p>
                 </div>
               </button>
               <button
                 type="button"
                 onClick={() => setValue("role", "HOST")}
-                className={`flex items-center gap-3 border rounded-xl p-3 transition-all ${
+                className={`flex items-center gap-3 border rounded-xl p-3 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                   selectedRole === "HOST"
-                    ? "border-[#FF385C] bg-red-50"
-                    : "border-gray-200 hover:border-gray-400"
+                    ? "border-primary-500 bg-primary-50"
+                    : "border-neutral-200 hover:border-neutral-400"
                 }`}
+                aria-pressed={selectedRole === "HOST"}
               >
-                <Building2 className={`w-5 h-5 ${selectedRole === "HOST" ? "text-[#FF385C]" : "text-gray-500"}`} />
+                <Building2
+                  className={`h-5 w-5 ${
+                    selectedRole === "HOST"
+                      ? "text-primary-600"
+                      : "text-neutral-500"
+                  }`}
+                  aria-hidden="true"
+                />
                 <div className="text-left">
-                  <p className={`text-sm font-semibold ${selectedRole === "HOST" ? "text-[#FF385C]" : "text-gray-900"}`}>Host guests</p>
-                  <p className="text-[10px] text-gray-500">List your property</p>
+                  <p
+                    className={`text-sm font-semibold ${
+                      selectedRole === "HOST"
+                        ? "text-primary-700"
+                        : "text-neutral-900"
+                    }`}
+                  >
+                    Host guests
+                  </p>
+                  <p className="text-xs text-neutral-500">List your property</p>
                 </div>
               </button>
             </div>
-            {errors.role && <p className="mt-1 text-xs text-red-500">{errors.role.message}</p>}
+            {errors.role && (
+              <p className="mt-1 text-xs text-error-600">{errors.role.message}</p>
+            )}
           </div>
 
           <Input
-            id="email"
             type="email"
             label="Email address"
             placeholder="you@example.com"
@@ -123,7 +178,6 @@ function RegisterForm() {
 
           <div className="relative">
             <Input
-              id="password"
               type={showPassword ? "text" : "password"}
               label="Password"
               placeholder="Create a strong password"
@@ -133,17 +187,21 @@ function RegisterForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-9 text-neutral-400 hover:text-neutral-600 p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
             </button>
           </div>
-          <p className="text-xs text-gray-400 -mt-3">
+          <p className="text-xs text-neutral-400 -mt-3">
             Min 8 chars, uppercase, lowercase, number & special character
           </p>
 
           <Input
-            id="confirmPassword"
             type={showPassword ? "text" : "password"}
             label="Confirm password"
             placeholder="Repeat your password"
@@ -156,10 +214,13 @@ function RegisterForm() {
           </Button>
         </form>
 
-        <div className="border-t border-gray-100 mt-8 pt-6 text-center">
-          <p className="text-sm text-gray-500">
+        <div className="border-t border-neutral-100 mt-8 pt-6 text-center">
+          <p className="text-sm text-neutral-500">
             Already have an account?{" "}
-            <Link href="/login" className="text-[#FF385C] font-semibold hover:underline">
+            <Link
+              href="/login"
+              className="text-primary-600 font-semibold hover:text-primary-700 transition-colors"
+            >
               Log in
             </Link>
           </p>

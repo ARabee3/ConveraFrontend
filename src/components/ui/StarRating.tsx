@@ -19,7 +19,7 @@ export default function StarRating({ rating, size = "sm", showValue = true, clas
           key={star}
           className={cn(
             sizes[size],
-            star <= Math.round(rating) ? "fill-[#FF385C] text-[#FF385C]" : "fill-gray-200 text-gray-200"
+            star <= Math.round(rating) ? "fill-primary-500 text-primary-500" : "fill-neutral-200 text-neutral-200"
           )}
         />
       ))}

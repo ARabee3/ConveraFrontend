@@ -20,16 +20,17 @@ const actionTypes = [
 ];
 
 export default function AdminActivityLogsPage() {
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
   const [actionType, setActionType] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "SYSTEM_ADMIN") router.push("/");
-  }, [user, router]);
+    if (user.role !== "ADMIN" && user.role !== "SYSTEM_ADMIN") router.push("/");
+  }, [user, hydrated, router]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-activity-logs", actionType, startDate, endDate],
@@ -40,10 +41,10 @@ export default function AdminActivityLogsPage() {
         endDate: endDate || undefined,
         take: 50,
       }).then((r) => r.data),
-    enabled: !!user && user.role === "SYSTEM_ADMIN",
+    enabled: !!user && (user.role === "ADMIN" || user.role === "SYSTEM_ADMIN"),
   });
 
-  if (!user) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user) return <LoadingSpinner fullPage />;
 
   const logs = data?.data || [];
 

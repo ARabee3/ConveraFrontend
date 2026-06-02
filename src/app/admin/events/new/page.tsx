@@ -8,8 +8,9 @@ import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import { adminEventsApi } from "@/lib/api";
+import { adminEventsApi, eventsApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
+import { useQuery } from "@tanstack/react-query";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import ImageUploader from "@/components/ui/ImageUploader";
@@ -18,7 +19,10 @@ import LocationPicker from "@/components/ui/LocationPicker";
 const schema = z.object({
   title: z.string().min(3),
   description: z.string().min(10),
-  date: z.string().min(1, "Date is required"),
+  date: z.string().min(1, "Date is required").refine(
+    (v) => !isNaN(Date.parse(v)),
+    { message: "Invalid date format" }
+  ),
   address: z.string().min(5),
   locationLat: z.number().min(-90).max(90),
   locationLng: z.number().min(-180).max(180),
@@ -34,13 +38,14 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function NewEventPage() {
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "SYSTEM_ADMIN") router.push("/");
-  }, [user, router]);
+    if (user.role !== "ADMIN" && user.role !== "SYSTEM_ADMIN") router.push("/");
+  }, [user, hydrated, router]);
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -51,6 +56,12 @@ export default function NewEventPage() {
   const lat = watch("locationLat");
   const lng = watch("locationLng");
   const address = watch("address");
+
+  const { data: categoriesResponse } = useQuery({
+    queryKey: ["eventCategories"],
+    queryFn: () => eventsApi.getCategories(),
+  });
+  const categories = categoriesResponse?.data || [];
 
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
@@ -128,7 +139,21 @@ export default function NewEventPage() {
           <Input id="maxCapacity" type="number" label="Max capacity" placeholder="1000" error={errors.maxCapacity?.message} {...register("maxCapacity", { valueAsNumber: true })} />
         </div>
 
-        <Input id="categoryId" label="Category ID (UUID)" placeholder="uuid-of-category" error={errors.categoryId?.message} {...register("categoryId")} />
+        <div>
+          <label className="block text-sm font-medium text-gray-800 mb-1.5">Category</label>
+          <select
+            className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-900 bg-white"
+            {...register("categoryId")}
+          >
+            <option value="">Select a category</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+          {errors.categoryId && <p className="mt-1 text-xs text-red-500">{errors.categoryId.message}</p>}
+        </div>
 
         {/* Cover Image Uploader */}
         <ImageUploader

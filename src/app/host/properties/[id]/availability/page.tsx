@@ -3,13 +3,15 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Lock, Tag } from "lucide-react";
-import Link from "next/link";
+import { Lock, Tag } from "lucide-react";
 import { hostApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { formatPrice } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 type AvailabilityStatus = "BLOCKED" | "PRICE_OVERRIDE";
 
@@ -46,7 +48,7 @@ export default function PropertyAvailabilityPage() {
         startDate,
         endDate,
         status,
-        overridePrice: status === "PRICE_OVERRIDE" && overridePrice ? Number(overridePrice) : undefined,
+        overridePrice: status === "PRICE_OVERRIDE" && overridePrice !== "" ? Number(overridePrice) : undefined,
       }),
     onSuccess: () => {
       setStartDate("");
@@ -58,7 +60,7 @@ export default function PropertyAvailabilityPage() {
     },
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { message?: string } } };
-      setError(e?.response?.data?.message || "Failed to update availability.");
+      setError(e?.response?.data?.message || "Failed to update availability");
     },
   });
 
@@ -68,12 +70,8 @@ export default function PropertyAvailabilityPage() {
       setError("Please select start and end dates.");
       return;
     }
-    if (new Date(endDate) <= new Date(startDate)) {
+    if (new Date(endDate) < new Date(startDate)) {
       setError("End date must be after start date.");
-      return;
-    }
-    if (status === "PRICE_OVERRIDE" && (!overridePrice || Number(overridePrice) <= 0)) {
-      setError("Please enter a valid override price.");
       return;
     }
     setError("");
@@ -81,38 +79,51 @@ export default function PropertyAvailabilityPage() {
   };
 
   if (!user || isLoading) return <LoadingSpinner fullPage />;
-  if (!property) return (
-    <div className="max-w-2xl mx-auto px-4 py-10 text-center">
-      <p className="text-gray-500">Property not found.</p>
-      <Link href="/host/properties" className="text-[#FF385C] mt-4 inline-block">← Back to dashboard</Link>
-    </div>
-  );
+
+  if (!property) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16">
+        <EmptyState
+          icon={<Lock className="h-6 w-6" />}
+          title="Property not found"
+          description="The property you are looking for does not exist or has been removed."
+          action={{ label: "Back to dashboard", onClick: () => router.push("/host/properties") }}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <Link href="/host/properties" className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 mb-6">
-        <ChevronLeft className="w-4 h-4" /> Back to dashboard
-      </Link>
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+      <Breadcrumb
+        items={[
+          { label: "Host Dashboard", href: "/host/properties" },
+          { label: "Manage Availability" },
+        ]}
+        className="mb-6"
+      />
 
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Manage Availability</h1>
-      <p className="text-gray-500 mb-8">{property.title}</p>
+      <h1 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-1">
+        Manage Availability
+      </h1>
+      <p className="text-neutral-500 mb-8">{property.title}</p>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-6">
+        <div className="bg-error-50 border border-error-200 text-error-700 text-sm px-4 py-3 rounded-xl mb-6">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-8 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded-2xl p-6 md:p-8 space-y-6 shadow-sm">
         {/* Status selection */}
         <div>
-          <label className="block text-sm font-medium text-gray-800 mb-3">Action type</label>
+          <label className="block text-sm font-medium text-neutral-800 mb-3">Action type</label>
           <div className="grid grid-cols-2 gap-4">
             <label
-              className={`flex items-center gap-3 border rounded-xl p-4 cursor-pointer transition-all ${
+              className={`flex items-center gap-3 border rounded-xl p-4 cursor-pointer transition-all duration-150 ${
                 status === "BLOCKED"
-                  ? "border-[#FF385C] bg-red-50"
-                  : "border-gray-200 hover:border-gray-400"
+                  ? "border-primary-500 bg-primary-50"
+                  : "border-neutral-200 hover:border-neutral-400"
               }`}
             >
               <input
@@ -123,18 +134,18 @@ export default function PropertyAvailabilityPage() {
                 onChange={() => setStatus("BLOCKED")}
                 className="sr-only"
               />
-              <Lock className="w-5 h-5 text-gray-600" />
+              <Lock className="h-5 w-5 text-neutral-600" aria-hidden="true" />
               <div>
-                <p className="font-semibold text-gray-900 text-sm">Block Dates</p>
-                <p className="text-xs text-gray-500">Make property unavailable</p>
+                <p className="font-semibold text-neutral-900 text-sm">Block Dates</p>
+                <p className="text-xs text-neutral-500">Make property unavailable</p>
               </div>
             </label>
 
             <label
-              className={`flex items-center gap-3 border rounded-xl p-4 cursor-pointer transition-all ${
+              className={`flex items-center gap-3 border rounded-xl p-4 cursor-pointer transition-all duration-150 ${
                 status === "PRICE_OVERRIDE"
-                  ? "border-[#FF385C] bg-red-50"
-                  : "border-gray-200 hover:border-gray-400"
+                  ? "border-primary-500 bg-primary-50"
+                  : "border-neutral-200 hover:border-neutral-400"
               }`}
             >
               <input
@@ -145,10 +156,10 @@ export default function PropertyAvailabilityPage() {
                 onChange={() => setStatus("PRICE_OVERRIDE")}
                 className="sr-only"
               />
-              <Tag className="w-5 h-5 text-gray-600" />
+              <Tag className="h-5 w-5 text-neutral-600" aria-hidden="true" />
               <div>
-                <p className="font-semibold text-gray-900 text-sm">Price Override</p>
-                <p className="text-xs text-gray-500">Set custom price for dates</p>
+                <p className="font-semibold text-neutral-900 text-sm">Price Override</p>
+                <p className="text-xs text-neutral-500">Set custom price for dates</p>
               </div>
             </label>
           </div>
@@ -156,58 +167,45 @@ export default function PropertyAvailabilityPage() {
 
         {/* Dates */}
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-800 mb-1.5">Start date</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-900"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-800 mb-1.5">End date</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              min={startDate || new Date().toISOString().split("T")[0]}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-900"
-            />
-          </div>
+          <Input
+            type="date"
+            label="Start date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            required
+          />
+          <Input
+            type="date"
+            label="End date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            required
+          />
         </div>
 
-        {/* Override price (conditional) */}
+        {/* Price override */}
         {status === "PRICE_OVERRIDE" && (
-          <div>
-            <label className="block text-sm font-medium text-gray-800 mb-1.5">
-              Override price per night (EGP)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="e.g. 200"
-              value={overridePrice}
-              onChange={(e) => setOverridePrice(e.target.value)}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-900"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Current base price: {formatPrice(property.basePrice)}
-            </p>
-          </div>
+          <Input
+            type="number"
+            label="Override price per night (EGP)"
+            placeholder="e.g. 2500"
+            value={overridePrice}
+            onChange={(e) => setOverridePrice(e.target.value)}
+            required
+          />
         )}
 
-        <div className="flex gap-4 pt-2">
-          <Button type="submit" isLoading={mutation.isPending} size="lg" className="flex-1">
-            {status === "BLOCKED" ? "Block Dates" : "Set Override Price"}
-          </Button>
-          <Link href="/host/properties">
-            <Button type="button" variant="secondary" size="lg">Cancel</Button>
-          </Link>
-        </div>
+        <Button type="submit" className="w-full py-3" isLoading={mutation.isPending}>
+          {status === "BLOCKED" ? "Block Dates" : "Set Price Override"}
+        </Button>
       </form>
+
+      {/* Current base price */}
+      <div className="mt-8 bg-neutral-50 border border-neutral-100 rounded-2xl p-6">
+        <p className="text-sm text-neutral-500">Current base price</p>
+        <p className="text-2xl font-bold text-neutral-900 mt-1">{formatPrice(property.basePrice)}</p>
+        <p className="text-xs text-neutral-400 mt-1">/ night</p>
+      </div>
     </div>
   );
 }

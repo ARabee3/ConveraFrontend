@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Home, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { bookingsApi } from "@/lib/api";
 import { formatPrice, formatDateRange } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -24,43 +25,55 @@ export default function PaymentSuccessPage() {
   if (isLoading) return <LoadingSpinner fullPage />;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-2xl shadow-card p-8 w-full max-w-md text-center">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle className="w-8 h-8 text-green-600" />
+    <div className="min-h-[calc(100vh-4rem)] bg-neutral-50 flex items-center justify-center px-4 py-12">
+      <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-md text-center border border-neutral-100">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success-100 mx-auto mb-6">
+          <CheckCircle className="h-8 w-8 text-success-600" />
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h1>
-        <p className="text-gray-500 text-sm mb-8">
-          Your booking has been confirmed. We&apos;ve sent a confirmation to your email.
+        <h1 className="text-2xl font-bold text-neutral-900 mb-2">
+          Payment Successful!
+        </h1>
+        <p className="text-neutral-500 text-sm mb-8">
+          Your booking has been confirmed. We&apos;ve sent a confirmation to your
+          email.
         </p>
 
         {booking && (
-          <div className="bg-gray-50 rounded-2xl p-5 text-left mb-8">
+          <div className="bg-neutral-50 rounded-2xl p-5 text-left mb-8 border border-neutral-100">
             <div className="flex items-center gap-3 mb-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={booking.property?.imageUrls?.[0] || PLACEHOLDER}
-                alt={booking.property?.title || "Property"}
-                className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
-              />
+              <div className="relative h-16 w-16 rounded-xl overflow-hidden shrink-0 bg-neutral-100">
+                <SafeImage
+                  src={booking.property?.imageUrls?.[0] || PLACEHOLDER}
+                  alt={booking.property?.title || "Property"}
+                  containerClassName="h-full w-full"
+                />
+              </div>
               <div>
-                <h3 className="font-semibold text-gray-900 text-sm">{booking.property?.title}</h3>
-                <p className="text-xs text-gray-500">{booking.property?.address}</p>
+                <h3 className="font-semibold text-neutral-900 text-sm">
+                  {booking.property?.title}
+                </h3>
+                <p className="text-xs text-neutral-500">
+                  {booking.property?.address}
+                </p>
               </div>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">Dates</span>
-                <span className="font-medium text-gray-900">{formatDateRange(booking.startDate, booking.endDate)}</span>
+                <span className="text-neutral-500">Dates</span>
+                <span className="font-medium text-neutral-900">
+                  {formatDateRange(booking.startDate, booking.endDate)}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Total</span>
-                <span className="font-semibold text-gray-900">{formatPrice(booking.totalPrice)}</span>
+                <span className="text-neutral-500">Total</span>
+                <span className="font-semibold text-neutral-900">
+                  {formatPrice(booking.totalPrice)}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Status</span>
-                <span className="text-green-600 font-medium">Confirmed</span>
+                <span className="text-neutral-500">Status</span>
+                <span className="text-success-600 font-medium">Confirmed</span>
               </div>
             </div>
           </div>
@@ -68,13 +81,13 @@ export default function PaymentSuccessPage() {
 
         <div className="space-y-3">
           <Link href="/bookings">
-            <Button className="w-full py-3 gap-2">
-              View My Bookings <ArrowRight className="w-4 h-4" />
+            <Button className="w-full py-3 gap-2" rightIcon={<ArrowRight className="h-4 w-4" />}>
+              View My Bookings
             </Button>
           </Link>
           <Link href="/">
-            <Button variant="secondary" className="w-full py-3 gap-2">
-              <Home className="w-4 h-4" /> Back to Home
+            <Button variant="secondary" className="w-full py-3 gap-2" leftIcon={<Home className="h-4 w-4" />}>
+              Back to Home
             </Button>
           </Link>
         </div>

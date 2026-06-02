@@ -33,31 +33,74 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
+let isRefreshing = false;
+
+interface FailedRequest {
+  resolve: (token: string | null) => void;
+  reject: (err: unknown) => void;
+}
+
+let failedQueue: FailedRequest[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // Response interceptor: 401 → refresh or logout
 api.interceptors.response.use(
   (res) => res,
   async (error: AxiosError) => {
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     if (error.response?.status === 401 && !original._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            if (original.headers) original.headers.Authorization = `Bearer ${token}`;
+            return api(original);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
       original._retry = true;
+      isRefreshing = true;
+
       try {
         const refreshToken = localStorage.getItem("convera_refresh_token");
         if (!refreshToken) throw new Error("No refresh token");
         const { data } = await axios.post<{ data: AuthTokens }>(`${BASE_URL}/auth/refresh`, { refreshToken });
         const tokens = data.data;
+
         localStorage.setItem("convera_access_token", tokens.accessToken);
         localStorage.setItem("convera_refresh_token", tokens.refreshToken);
         localStorage.setItem("convera_user", JSON.stringify(tokens.user));
         document.cookie = `convera_token=${tokens.accessToken}; path=/; SameSite=Lax; max-age=86400`;
         document.cookie = `convera_role=${tokens.user.role}; path=/; SameSite=Lax; max-age=86400`;
+
         if (original.headers) original.headers.Authorization = `Bearer ${tokens.accessToken}`;
+
+        processQueue(null, tokens.accessToken);
         return api(original);
-      } catch {
+      } catch (err) {
+        processQueue(err, null);
         localStorage.removeItem("convera_access_token");
         localStorage.removeItem("convera_refresh_token");
         localStorage.removeItem("convera_user");
         document.cookie = "convera_token=; path=/; max-age=0";
         window.location.href = "/login";
+        return Promise.reject(err);
+      } finally {
+        isRefreshing = false;
       }
     }
     return Promise.reject(error);
@@ -84,6 +127,7 @@ export const authApi = {
 
 // --- PROPERTIES ---
 export interface PropertyFilters {
+  search?: string;
   lat?: number;
   lng?: number;
   radius?: number;
@@ -116,6 +160,7 @@ export interface CreatePropertyData {
   amenities: string[];
   imageUrls: string[];
   basePrice: number;
+  isActive?: boolean;
 }
 
 export const hostApi = {
@@ -135,6 +180,9 @@ export const hostApi = {
     id: string,
     data: { startDate: string; endDate: string; status: string; overridePrice?: number }
   ) => api.post(`/host/properties/${id}/availability`, data),
+
+  toggleActive: (id: string) =>
+    api.post<{ id: string; isActive: boolean }>(`/host/properties/${id}/toggle-active`),
 };
 
 // --- EVENTS ---
@@ -154,8 +202,14 @@ export const eventsApi = {
   list: (filters?: EventFilters) =>
     api.get<EventsResponse>("/events", { params: filters }),
 
+  getCategories: () =>
+    api.get<{ id: string; name: string; description: string }[]>("/events/categories"),
+
   get: (id: string) =>
     api.get<ConveraEvent>(`/events/${id}`),
+
+  register: (id: string) =>
+    api.post<{ success: boolean }>(`/events/${id}/register`, {}),
 };
 
 // --- ADMIN EVENTS ---
@@ -190,6 +244,12 @@ export const adminEventsApi = {
 
   importEvents: () =>
     api.post<{ success: boolean; imported: number; updated: number }>("/admin/events/import"),
+
+  createCategory: (data: { name: string; description: string }) =>
+    api.post("/admin/events/categories", data),
+
+  deleteCategory: (id: string) =>
+    api.delete(`/admin/events/categories/${id}`),
 };
 
 // --- BOOKINGS ---
@@ -199,12 +259,42 @@ export const bookingsApi = {
 
   listMe: () =>
     api.get<Booking[]>("/bookings/me"),
+
+  get: (id: string) =>
+    api.get<Booking>(`/bookings/${id}`),
 };
 
 // --- PAYMENTS ---
 export const paymentsApi = {
   initialize: (bookingId: string, provider: "STRIPE" | "PAYMOB") =>
     api.post<PaymentInitResponse>("/payments/initialize", { bookingId, provider }),
+
+  confirmMock: (bookingId: string) =>
+    api.post<{ status: string; bookingId: string }>("/payments/confirm-mock", { bookingId }),
+};
+
+// --- CHAT ---
+export const chatApi = {
+  createSession: (propertyId: string) =>
+    api.post<{ sessionId: string }>("/chat/sessions", { propertyId }),
+
+  listSessions: () =>
+    api.get<{
+      sessionId: string;
+      propertyTitle: string;
+      propertyAddress: string;
+      lastMessage?: string;
+      lastMessageAt?: string;
+      lastMessageSenderId?: string;
+      isHost?: boolean;
+      hasUnread: boolean;
+    }[]>("/chat/sessions"),
+
+  getHistory: (sessionId: string, limit?: number, offset?: number) =>
+    api.get<{ data: { id: string; sessionId: string; senderId: string; content: string; createdAt: string }[] }>(
+      `/chat/${sessionId}/history`,
+      { params: { limit, offset } },
+    ),
 };
 
 // --- ADMIN ---

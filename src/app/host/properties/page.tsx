@@ -10,6 +10,10 @@ import { useAuthStore } from "@/store/auth";
 import { formatPrice } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Button from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SafeImage } from "@/components/ui/SafeImage";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=200&q=60";
 
@@ -43,108 +47,174 @@ export default function HostPropertiesPage() {
   if (!user) return <LoadingSpinner fullPage />;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+      <Breadcrumb items={[{ label: "Host Dashboard" }]} className="mb-6" />
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Host Dashboard</h1>
-          <p className="text-gray-500 mt-1">Manage your property listings</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-neutral-900">
+            Host Dashboard
+          </h1>
+          <p className="text-neutral-500 mt-1">Manage your property listings</p>
         </div>
         <Link href="/host/properties/new">
-          <Button className="gap-2">
-            <Plus className="w-4 h-4" /> Add Property
+          <Button className="gap-2 w-full sm:w-auto">
+            <Plus className="h-4 w-4" /> Add Property
           </Button>
         </Link>
       </div>
 
       {isLoading ? (
-        <LoadingSpinner fullPage />
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-white border border-neutral-200 rounded-2xl p-4 animate-pulse h-20" />
+          ))}
+        </div>
       ) : !properties || properties.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-2xl p-16 text-center">
-          <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">No properties yet</h2>
-          <p className="text-gray-500 text-sm mb-6">Add your first property to start hosting.</p>
-          <Link href="/host/properties/new">
-            <Button size="lg">Add your first property</Button>
-          </Link>
-        </div>
+        <EmptyState
+          icon={<Building2 className="h-6 w-6" />}
+          title="No properties yet"
+          description="Add your first property to start hosting guests."
+          action={{ label: "Add your first property", onClick: () => router.push("/host/properties/new") }}
+        />
       ) : (
-        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase px-6 py-4">Property</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase px-6 py-4 hidden sm:table-cell">Type</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase px-6 py-4 hidden md:table-cell">Price/night</th>
-                <th className="text-left text-xs font-semibold text-gray-500 uppercase px-6 py-4 hidden lg:table-cell">Status</th>
-                <th className="px-6 py-4" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {properties.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={p.imageUrls?.[0] || PLACEHOLDER}
-                        alt={p.title}
-                        className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
-                        onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER; }}
-                      />
-                      <div className="min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{p.title}</p>
-                        <p className="text-xs text-gray-500 truncate">{p.address}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 hidden sm:table-cell">
-                    <span className="text-sm text-gray-600">{p.type}</span>
-                  </td>
-                  <td className="px-6 py-4 hidden md:table-cell">
-                    <span className="text-sm font-medium text-gray-900">{formatPrice(p.basePrice)}</span>
-                  </td>
-                  <td className="px-6 py-4 hidden lg:table-cell">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${p.isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                      {p.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 justify-end">
-                      <Link
-                        href={`/properties/${p.id}`}
-                        className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="View"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Link>
-                      <Link
-                        href={`/host/properties/${p.id}/edit`}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Link>
-                      <Link
-                        href={`/host/properties/${p.id}/availability`}
-                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                        title="Availability"
-                      >
-                        <Calendar className="w-4 h-4" />
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(p.id, p.title)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+        <>
+          {/* Desktop Table */}
+          <div className="hidden md:block bg-white border border-neutral-200 rounded-2xl overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
+                <tr>
+                  <th scope="col" className="text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                    Property
+                  </th>
+                  <th scope="col" className="text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                    Type
+                  </th>
+                  <th scope="col" className="text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                    Price/night
+                  </th>
+                  <th scope="col" className="text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider px-6 py-4">
+                    Status
+                  </th>
+                  <th scope="col" className="px-6 py-4">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {properties.map((p) => (
+                  <tr key={p.id} className="hover:bg-neutral-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <SafeImage
+                          src={p.imageUrls?.[0] || PLACEHOLDER}
+                          alt={p.title}
+                          containerClassName="h-12 w-12 rounded-xl shrink-0"
+                          className="rounded-xl"
+                        />
+                        <div className="min-w-0">
+                          <p className="font-medium text-neutral-900 truncate">{p.title}</p>
+                          <p className="text-xs text-neutral-500 truncate">{p.address}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-neutral-600">{p.type}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-medium text-neutral-900">{formatPrice(p.basePrice)}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge variant={p.isActive ? "success" : "error"} size="sm">
+                        {p.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1 justify-end">
+                        <Link
+                          href={`/properties/${p.id}`}
+                          className="p-2 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
+                          title="View"
+                          aria-label={`View ${p.title}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                        <Link
+                          href={`/host/properties/${p.id}/edit`}
+                          className="p-2 text-neutral-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                          title="Edit"
+                          aria-label={`Edit ${p.title}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Link>
+                        <Link
+                          href={`/host/properties/${p.id}/availability`}
+                          className="p-2 text-neutral-400 hover:text-success-600 hover:bg-success-50 rounded-lg transition-colors"
+                          title="Availability"
+                          aria-label={`Availability for ${p.title}`}
+                        >
+                          <Calendar className="h-4 w-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(p.id, p.title)}
+                          className="p-2 text-neutral-400 hover:text-error-600 hover:bg-error-50 rounded-lg transition-colors"
+                          title="Delete"
+                          aria-label={`Delete ${p.title}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden space-y-4">
+            {properties.map((p) => (
+              <div key={p.id} className="bg-white border border-neutral-200 rounded-2xl p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start gap-3 mb-3">
+                  <SafeImage
+                    src={p.imageUrls?.[0] || PLACEHOLDER}
+                    alt={p.title}
+                    containerClassName="h-14 w-14 rounded-xl shrink-0"
+                    className="rounded-xl"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-neutral-900 truncate">{p.title}</p>
+                    <p className="text-xs text-neutral-500 truncate">{p.address}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-sm font-medium text-neutral-900">{formatPrice(p.basePrice)}</span>
+                      <Badge variant={p.isActive ? "success" : "error"} size="sm">
+                        {p.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link href={`/properties/${p.id}`} className="flex-1">
+                    <Button variant="secondary" size="sm" className="w-full">View</Button>
+                  </Link>
+                  <Link href={`/host/properties/${p.id}/edit`} className="flex-1">
+                    <Button variant="secondary" size="sm" className="w-full">Edit</Button>
+                  </Link>
+                  <Link href={`/host/properties/${p.id}/availability`} className="flex-1">
+                    <Button variant="secondary" size="sm" className="w-full">Calendar</Button>
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(p.id, p.title)}
+                    className="p-2 text-neutral-400 hover:text-error-600 hover:bg-error-50 rounded-lg transition-colors border border-neutral-200"
+                    aria-label={`Delete ${p.title}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

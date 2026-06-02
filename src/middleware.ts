@@ -17,6 +17,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Redirect authenticated users away from auth pages
+  if (token && (pathname === "/login" || pathname === "/register" || pathname === "/forgot-password")) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
   // Role-based protection
   if (pathname.startsWith("/host") && token) {
     if (role !== "HOST" && role !== "ADMIN" && role !== "SYSTEM_ADMIN") {
@@ -25,7 +30,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/admin") && token) {
-    if (role !== "SYSTEM_ADMIN") {
+    if (role !== "ADMIN" && role !== "SYSTEM_ADMIN") {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }
