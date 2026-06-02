@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, X, Home, MessageSquare, Calendar, Building2, User, Shield, LogOut } from "lucide-react";
+import { Menu, X, MessageSquare, Calendar, Building2, User, Shield, LogOut, Sparkles } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { getDisplayName } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
@@ -66,19 +66,26 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-navbar border-b border-neutral-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <Home className="h-6 w-6 text-primary-600" aria-hidden="true" />
-            <span className="text-xl font-bold text-primary-600 tracking-tight">
-              convera
-            </span>
-          </Link>
+    <div className="sticky top-4 z-50 px-4 max-w-7xl mx-auto w-full mb-4">
+      <header className="bg-white/80 backdrop-blur-xl border border-neutral-200/60 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] supports-[backdrop-filter]:bg-white/60 transition-all duration-300">
+        <div className="px-4 sm:px-6">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2.5 shrink-0 transition-transform hover:scale-105 active:scale-95">
+              <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-primary-600 to-indigo-600 text-white shadow-sm">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor"/>
+                  <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <span className="text-xl font-extrabold text-neutral-900 tracking-tighter">
+                Convera.
+              </span>
+            </Link>
 
           {/* Center pill - functional navigation */}
-          <nav className="hidden md:flex items-center border border-neutral-200 rounded-full px-1 py-1 shadow-sm hover:shadow-md transition-shadow duration-150">
+          <nav className="hidden md:flex items-center bg-white/50 backdrop-blur-sm border border-neutral-200/60 rounded-full px-1 py-1 shadow-sm transition-all duration-300 hover:shadow-md hover:bg-white/80">
             <Link
               href="/properties"
               className="px-4 py-1.5 text-sm font-medium text-neutral-700 hover:text-neutral-900 rounded-full hover:bg-neutral-50 transition-colors"
@@ -92,6 +99,14 @@ export default function Navbar() {
             >
               Events
             </Link>
+            <div className="h-4 w-px bg-neutral-200" aria-hidden="true" />
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent("open-ai-search"))}
+              className="px-4 py-1.5 text-sm font-semibold text-primary-600 hover:text-primary-800 rounded-full hover:bg-primary-50 transition-all flex items-center gap-1 group"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-primary-500 animate-pulse group-hover:scale-110 transition-transform" />
+              Ask AI
+            </button>
           </nav>
 
           {/* Desktop nav */}
@@ -203,6 +218,16 @@ export default function Navbar() {
                 <MobileLink href="/events" icon={Calendar} onClick={closeMenu}>
                   Events
                 </MobileLink>
+                <button
+                  onClick={() => {
+                    closeMenu();
+                    window.dispatchEvent(new CustomEvent("open-ai-search"));
+                  }}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-primary-600 hover:bg-primary-50 transition-colors"
+                >
+                  <Sparkles className="h-4 w-4 text-primary-500 animate-pulse" />
+                  Ask AI
+                </button>
 
                 {user && (
                   <>
@@ -265,7 +290,8 @@ export default function Navbar() {
           </div>
         </>
       )}
-    </header>
+      </header>
+    </div>
   );
 }
 

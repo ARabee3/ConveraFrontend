@@ -4,6 +4,9 @@ import "./globals.css";
 import ClientProviders from "@/components/providers/ClientProviders";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import NextTopLoader from "nextjs-toploader";
+import AiSearchModal from "@/components/ui/AiSearchModal";
+import AiSearchTrigger from "@/components/ui/AiSearchTrigger";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -32,12 +35,16 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="font-sans antialiased min-h-screen flex flex-col bg-neutral-50 text-neutral-900" suppressHydrationWarning>
+        <NextTopLoader color="#4f46e5" showSpinner={false} />
         <ClientProviders>
           <Navbar />
           <main className="flex-1">{children}</main>
           <Footer />
+          <AiSearchModal />
+          <AiSearchTrigger />
         </ClientProviders>
       </body>
     </html>
   );
 }
+

@@ -320,3 +320,13 @@ export const adminApi = {
   getActivityLogs: (params?: { cursor?: string; take?: number; actionType?: string; startDate?: string; endDate?: string }) =>
     api.get<PaginatedResponse<ActivityLog>>("/admin/activity-logs", { params }),
 };
+
+// --- AI ---
+export const aiApi = {
+  search: (query: string) =>
+    api.post<{
+      message: string;
+      properties: Property[];
+      events: ConveraEvent[];
+    }>("/ai/search", { query }),
+};
