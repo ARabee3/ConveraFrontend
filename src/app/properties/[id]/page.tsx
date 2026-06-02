@@ -3,7 +3,24 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MapPin, Wifi, Star, Send } from "lucide-react";
+import {
+  MapPin,
+  Wifi,
+  Star,
+  Send,
+  Tv,
+  Car,
+  Waves,
+  Wind,
+  ChefHat,
+  Bath,
+  Sparkles,
+  Shield,
+  Coffee,
+  Dog,
+  Utensils,
+  Key
+} from "lucide-react";
 import { SafeImage } from "@/components/ui/SafeImage";
 import useEmblaCarousel from "embla-carousel-react";
 import { propertiesApi, bookingsApi } from "@/lib/api";
@@ -19,6 +36,23 @@ import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80";
+
+function getAmenityIcon(name: string) {
+  const norm = name.toLowerCase().trim();
+  if (norm.includes("wifi") || norm.includes("internet")) return Wifi;
+  if (norm.includes("ac") || norm.includes("air conditioning") || norm.includes("cooling")) return Wind;
+  if (norm.includes("tv") || norm.includes("television") || norm.includes("netflix")) return Tv;
+  if (norm.includes("parking") || norm.includes("car") || norm.includes("garage")) return Car;
+  if (norm.includes("pool") || norm.includes("swimming") || norm.includes("waves")) return Waves;
+  if (norm.includes("kitchen") || norm.includes("cook") || norm.includes("stove") || norm.includes("oven")) return ChefHat;
+  if (norm.includes("bath") || norm.includes("shower") || norm.includes("bathroom") || norm.includes("hot tub")) return Bath;
+  if (norm.includes("security") || norm.includes("lock") || norm.includes("safe")) return Shield;
+  if (norm.includes("coffee") || norm.includes("breakfast") || norm.includes("tea")) return Coffee;
+  if (norm.includes("pet") || norm.includes("dog") || norm.includes("cat")) return Dog;
+  if (norm.includes("food") || norm.includes("dining") || norm.includes("restaurant")) return Utensils;
+  if (norm.includes("key") || norm.includes("self check-in")) return Key;
+  return Sparkles;
+}
 
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -286,8 +320,8 @@ export default function PropertyDetailPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-4 grid-rows-2 gap-2 rounded-2xl overflow-hidden h-[420px] mb-10">
-          <div className="col-span-2 row-span-2 relative bg-neutral-100">
+        <div className="grid grid-cols-4 grid-rows-2 gap-3 rounded-[2rem] overflow-hidden h-[460px] mb-12 shadow-sm border border-neutral-200/40">
+          <div className="col-span-2 row-span-2 relative bg-neutral-100 group">
             <SafeImage
               src={images[0]}
               alt={property.title}
@@ -295,12 +329,12 @@ export default function PropertyDetailPage() {
             />
           </div>
           {[1, 2, 3, 4].map((idx) => (
-            <div key={idx} className="relative overflow-hidden bg-neutral-100">
+            <div key={idx} className="relative overflow-hidden bg-neutral-100 group">
               <SafeImage
                 src={images[idx] || PLACEHOLDER}
                 alt={`${property.title} view ${idx}`}
                 containerClassName="h-full w-full"
-                className="hover:scale-105 transition-transform duration-300"
+                className="group-hover:scale-105 transition-transform duration-500"
               />
             </div>
           ))}
@@ -339,15 +373,18 @@ export default function PropertyDetailPage() {
                 What this place offers
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {property.amenities.map((a) => (
-                  <div
-                    key={a}
-                    className="flex items-center gap-2.5 text-neutral-700 bg-neutral-50 rounded-xl px-3 py-2.5"
-                  >
-                    <Wifi className="h-4 w-4 text-neutral-400" aria-hidden="true" />
-                    <span className="text-sm">{a}</span>
-                  </div>
-                ))}
+                {property.amenities.map((a) => {
+                  const Icon = getAmenityIcon(a);
+                  return (
+                    <div
+                      key={a}
+                      className="flex items-center gap-2.5 text-neutral-700 bg-neutral-50 rounded-xl px-3 py-2.5"
+                    >
+                      <Icon className="h-4 w-4 text-neutral-400" aria-hidden="true" />
+                      <span className="text-sm">{a}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -446,8 +483,8 @@ export default function PropertyDetailPage() {
         </div>
 
         {/* Right: Booking widget */}
-        <div className="lg:sticky lg:top-24 lg:self-start">
-          <div className="bg-white border border-neutral-200 rounded-2xl shadow-md p-6">
+        <div className="lg:sticky lg:top-28 lg:self-start z-10">
+          <div className="bg-white/70 backdrop-blur-xl border border-white rounded-[2rem] shadow-[0_8px_40px_rgb(0,0,0,0.08)] p-7 supports-[backdrop-filter]:bg-white/60">
             {!property.isActive ? (
               <div className="text-center py-4">
                 <p className="text-sm font-semibold text-error-600 mb-2">

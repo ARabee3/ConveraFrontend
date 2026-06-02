@@ -49,68 +49,71 @@ export default function SearchBar({ className, variant = "hero" }: SearchBarProp
     <form
       onSubmit={handleSearch}
       className={cn(
-        "bg-white rounded-2xl shadow-md hover:shadow-lg transition-shadow duration-200 flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x divide-neutral-100 overflow-hidden w-full max-w-3xl",
+        "bg-white sm:rounded-full rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col sm:flex-row items-stretch sm:items-center divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 w-full max-w-4xl mx-auto border border-neutral-200/60",
         variant === "inline" && "absolute top-0 left-0 right-0 z-20 mx-4 sm:relative sm:mx-0",
         className
       )}
     >
       {/* Location */}
-      <div className="flex-1 flex items-center gap-3 px-5 py-3.5 min-w-0">
-        <MapPin className="h-4 w-4 text-neutral-400 shrink-0" aria-hidden="true" />
+      <div className="flex-1 flex items-center gap-3 px-6 py-4 min-w-0 group hover:bg-neutral-50/50 transition-colors sm:rounded-l-full rounded-t-2xl cursor-text" onClick={() => document.getElementById('search-location')?.focus()}>
+        <MapPin className="h-5 w-5 text-neutral-400 group-hover:text-primary-500 transition-colors shrink-0" aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          <label className="block text-xs font-semibold text-neutral-900 uppercase tracking-wider">
+          <label htmlFor="search-location" className="block text-[11px] font-bold text-neutral-900 uppercase tracking-widest cursor-pointer">
             Where
           </label>
           <input
+            id="search-location"
             type="text"
             placeholder="Search destinations"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="text-sm text-neutral-700 placeholder:text-neutral-400 outline-none w-full bg-transparent mt-0.5"
+            className="text-sm font-medium text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal outline-none w-full bg-transparent mt-0.5 truncate"
           />
         </div>
       </div>
 
       {/* Check in */}
-      <div className="flex items-center gap-3 px-5 py-3.5">
-        <Calendar className="h-4 w-4 text-neutral-400 shrink-0" aria-hidden="true" />
-        <div>
-          <label className="block text-xs font-semibold text-neutral-900 uppercase tracking-wider">
+      <div className="flex-1 flex items-center gap-3 px-6 py-4 min-w-0 group hover:bg-neutral-50/50 transition-colors cursor-text" onClick={() => document.getElementById('search-checkin')?.focus()}>
+        <Calendar className="h-5 w-5 text-neutral-400 group-hover:text-primary-500 transition-colors shrink-0" aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <label htmlFor="search-checkin" className="block text-[11px] font-bold text-neutral-900 uppercase tracking-widest cursor-pointer">
             Check in
           </label>
           <input
+            id="search-checkin"
             type="date"
             value={checkIn}
             onChange={(e) => setCheckIn(e.target.value)}
-            className="text-sm text-neutral-700 outline-none bg-transparent mt-0.5 cursor-pointer"
+            className="text-sm font-medium text-neutral-900 outline-none bg-transparent mt-0.5 w-full cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
           />
         </div>
       </div>
 
       {/* Check out */}
-      <div className="flex items-center gap-3 px-5 py-3.5">
-        <Calendar className="h-4 w-4 text-neutral-400 shrink-0" aria-hidden="true" />
-        <div>
-          <label className="block text-xs font-semibold text-neutral-900 uppercase tracking-wider">
+      <div className="flex-1 flex items-center gap-3 px-6 py-4 min-w-0 group hover:bg-neutral-50/50 transition-colors cursor-text" onClick={() => document.getElementById('search-checkout')?.focus()}>
+        <Calendar className="h-5 w-5 text-neutral-400 group-hover:text-primary-500 transition-colors shrink-0" aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <label htmlFor="search-checkout" className="block text-[11px] font-bold text-neutral-900 uppercase tracking-widest cursor-pointer">
             Check out
           </label>
           <input
+            id="search-checkout"
             type="date"
             value={checkOut}
             onChange={(e) => setCheckOut(e.target.value)}
-            className="text-sm text-neutral-700 outline-none bg-transparent mt-0.5 cursor-pointer"
+            className="text-sm font-medium text-neutral-900 outline-none bg-transparent mt-0.5 w-full cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
           />
         </div>
       </div>
 
       {/* Search button */}
-      <div className="flex items-center p-2">
+      <div className="flex items-center p-2 sm:pr-2.5">
         <button
           type="submit"
-          className="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl px-5 py-2.5 transition-colors duration-150 font-semibold text-sm w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white sm:rounded-full rounded-xl px-6 py-3.5 sm:py-3 transition-all duration-200 font-bold text-sm w-full sm:w-auto shadow-sm active:scale-95"
         >
-          <Search className="h-4 w-4" />
-          <span className="hidden sm:inline">Search</span>
+          <Search className="h-4 w-4 stroke-[3]" />
+          <span className="sm:hidden lg:inline">Search</span>
         </button>
       </div>
     </form>

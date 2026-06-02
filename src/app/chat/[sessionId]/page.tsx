@@ -24,7 +24,7 @@ interface ChatMessagePayload {
 export default function ChatThreadPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const { messages: liveMessages, sendMessage, subscribe, isConnected, clearMessages, lastError, clearError } = useChat();
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
@@ -34,8 +34,9 @@ export default function ChatThreadPage() {
   const hasSentMessageRef = useRef(false);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) router.push("/login");
-  }, [user, router]);
+  }, [user, hydrated, router]);
 
   // Fetch history
   const { data: historyData, isLoading } = useQuery({
@@ -88,7 +89,7 @@ export default function ChatThreadPage() {
     setInput("");
   };
 
-  if (!user) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user) return <LoadingSpinner fullPage />;
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-4rem)] flex flex-col">
@@ -198,7 +199,7 @@ export default function ChatThreadPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 border border-neutral-200 rounded-full px-5 py-3 text-sm focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all bg-white"
+            className="flex-1 border border-neutral-200/60 rounded-full px-5 py-3 text-sm focus:outline-none focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-500/10 transition-all bg-neutral-50/50 hover:bg-neutral-100/50"
             disabled={!isConnected}
             aria-label="Message input"
           />

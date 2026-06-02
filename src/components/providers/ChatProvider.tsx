@@ -44,11 +44,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [lastError, setLastError] = useState<string | null>(null);
 
   const accessToken = useAuthStore((s) => s.accessToken);
+  const hydrated = useAuthStore((s) => s.hydrated);
 
   const clearError = useCallback(() => setLastError(null), []);
 
   useEffect(() => {
-    if (!accessToken) return;
+    // Don't attempt connection until auth store is hydrated
+    if (!hydrated || !accessToken) return;
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -86,8 +88,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      setIsConnected(false);
     };
-  }, [accessToken]);
+  }, [accessToken, hydrated]);
 
   const sendMessage = useCallback((sessionId: string, content: string) => {
     if (socketRef.current) {

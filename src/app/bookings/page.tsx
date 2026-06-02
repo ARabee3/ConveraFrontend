@@ -28,12 +28,13 @@ const statusConfig: Record<
 const PLACEHOLDER = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80";
 
 export default function BookingsPage() {
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) router.push("/login");
-  }, [user, router]);
+  }, [user, hydrated, router]);
 
   const { data: bookings, isLoading, error } = useQuery({
     queryKey: ["bookings", "me"],
@@ -41,7 +42,7 @@ export default function BookingsPage() {
     enabled: !!user,
   });
 
-  if (!user) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user) return <LoadingSpinner fullPage />;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">

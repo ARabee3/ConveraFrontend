@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MapPin, Loader2 } from "lucide-react";
-import type { Map as LeafletMap, Marker } from "leaflet";
+import type { Map as LeafletMap } from "leaflet";
 
 interface MapViewProps {
   lat: number;
@@ -14,26 +14,35 @@ interface MapViewProps {
 
 export default function MapView({ lat, lng, address, zoom = 14, height = "h-80" }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<LeafletMap | null>(null);
-  const markerRef = useRef<Marker | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
     if (!mapContainerRef.current || typeof window === "undefined") return;
 
-    let map: LeafletMap | null = null;
-    let marker: Marker | null = null;
     let cancelled = false;
+    let map: LeafletMap | null = null;
+    let resizeObserver: ResizeObserver | null = null;
 
     const init = async () => {
+      // Ensure Leaflet CSS is loaded (fallback if @import in globals.css is stripped)
+      if (!document.querySelector('link[href*="leaflet"]')) {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        document.head.appendChild(link);
+        // Wait a tick for the stylesheet to load
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+
       const L = await import("leaflet");
       if (cancelled || !mapContainerRef.current) return;
 
-      // Clean up any stale Leaflet state on the container (e.g. from Strict Mode unmount)
+      // Reset the container completely to avoid "Map container is being reused"
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const container = mapContainerRef.current as any;
       if (container._leaflet_id) {
         delete container._leaflet_id;
+        container.innerHTML = "";
       }
 
       map = L.map(mapContainerRef.current).setView([lat, lng], zoom);
@@ -54,35 +63,58 @@ export default function MapView({ lat, lng, address, zoom = 14, height = "h-80" 
         shadowSize: [41, 41],
       });
 
-      marker = L.marker([lat, lng], { icon }).addTo(map);
+      const marker = L.marker([lat, lng], { icon }).addTo(map);
       if (address) {
         marker.bindPopup(address).openPopup();
       }
 
-      mapRef.current = map;
-      markerRef.current = marker;
+      // Check again after all synchronous work — if cleanup was called during
+      // our await, destroy immediately and don't update state
+      if (cancelled) {
+        map.remove();
+        map = null;
+        return;
+      }
+
       setMapReady(true);
 
-      const resizeObserver = new ResizeObserver(() => {
+      // Force a tile refresh after layout settles — fixes partial tile rendering
+      setTimeout(() => {
+        if (!cancelled && map) {
+          map.invalidateSize();
+        }
+      }, 200);
+
+      resizeObserver = new ResizeObserver(() => {
         if (!cancelled && map) {
           map.invalidateSize();
         }
       });
       resizeObserver.observe(mapContainerRef.current!);
-
-      return () => {
-        cancelled = true;
-        resizeObserver.disconnect();
-        map?.remove();
-        mapRef.current = null;
-        markerRef.current = null;
-      };
     };
 
-    const cleanup = init();
+    const containerEl = mapContainerRef.current;
 
+    setMapReady(false);
+    init();
+
+    // SYNCHRONOUS cleanup — sets cancelled flag immediately so async init() can bail out
     return () => {
-      cleanup.then(cleanupFn => cleanupFn && cleanupFn());
+      cancelled = true;
+      resizeObserver?.disconnect();
+      if (map) {
+        map.remove();
+        map = null;
+      }
+      // Also clear container in case map was never assigned (init still pending)
+      if (containerEl) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const container = containerEl as any;
+        if (container._leaflet_id) {
+          delete container._leaflet_id;
+          container.innerHTML = "";
+        }
+      }
     };
   }, [lat, lng, zoom, address]);
 

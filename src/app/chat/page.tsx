@@ -13,12 +13,13 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 export default function ChatListPage() {
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) router.push("/login");
-  }, [user, router]);
+  }, [user, hydrated, router]);
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: ["chat-sessions"],
@@ -26,7 +27,7 @@ export default function ChatListPage() {
     enabled: !!user,
   });
 
-  if (!user) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user) return <LoadingSpinner fullPage />;
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
@@ -58,7 +59,7 @@ export default function ChatListPage() {
             <Link
               key={session.sessionId}
               href={`/chat/${session.sessionId}`}
-              className="flex items-center gap-4 bg-white border border-neutral-200 rounded-2xl p-5 hover:shadow-md transition-shadow duration-150"
+              className="flex items-center gap-4 bg-white/60 backdrop-blur-xl border border-neutral-200/60 rounded-[1.5rem] p-5 hover:shadow-lg transition-all duration-300"
             >
               <div className="shrink-0">
                 <Avatar name={session.propertyTitle} size="lg" />

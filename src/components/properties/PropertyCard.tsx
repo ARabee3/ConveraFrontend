@@ -23,15 +23,15 @@ export default function PropertyCard({ property, className }: PropertyCardProps)
       className={cn("block group", className)}
       aria-label={`${property.title}, ${property.address}`}
     >
-      <div className="relative overflow-hidden rounded-2xl aspect-[4/3] bg-neutral-100 mb-3">
+      <div className="relative overflow-hidden rounded-2xl aspect-[4/3] bg-neutral-100 mb-4 shadow-sm border border-neutral-200/40">
         <SafeImage
           src={imgSrc}
           alt={property.title}
           containerClassName="h-full w-full"
           className="group-hover:scale-105 transition-transform duration-300 ease-out"
         />
-        <div className="absolute top-3 left-3">
-          <span className="bg-white/95 backdrop-blur-sm text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm text-neutral-700">
+        <div className="absolute top-3 left-3 z-10">
+          <span className="bg-white/70 backdrop-blur-md text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm border border-white/20 text-neutral-800">
             {property.type === "APARTMENT" ? "Apartment" : "Hotel"}
           </span>
         </div>

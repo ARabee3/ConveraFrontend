@@ -55,7 +55,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   initFromStorage: () => {
-    // Re-read in case another tab changed storage
     const data = readLocalStorage();
     set({ ...data, hydrated: true });
   },

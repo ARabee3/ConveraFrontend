@@ -16,13 +16,14 @@ type Provider = "MOCK" | "STRIPE" | "PAYMOB";
 export default function PaymentPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const [provider, setProvider] = useState<Provider>("MOCK");
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) router.push("/login");
-  }, [user, router]);
+  }, [user, hydrated, router]);
 
   const { data: booking, isLoading: loadingBooking, error: fetchError } = useQuery({
     queryKey: ["booking", id],
@@ -66,7 +67,7 @@ export default function PaymentPage() {
     }
   };
 
-  if (!user || loadingBooking) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user || loadingBooking) return <LoadingSpinner fullPage />;
 
   const isUnauthorized = axios.isAxiosError(fetchError) && fetchError.response?.status === 403;
   const isNotFound = (axios.isAxiosError(fetchError) && fetchError.response?.status === 404) || !booking;

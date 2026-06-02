@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MapPin, Calendar, Users, Clock } from "lucide-react";
 import { SafeImage } from "@/components/ui/SafeImage";
 import useEmblaCarousel from "embla-carousel-react";
@@ -24,6 +24,7 @@ export default function EventDetailPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [bookingError, setBookingError] = useState("");
   const [emblaRef] = useEmblaCarousel({ loop: true });
@@ -45,6 +46,8 @@ export default function EventDetailPage() {
         description: "You have registered for this event.",
         variant: "success",
       });
+      queryClient.invalidateQueries({ queryKey: ["event", id] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
       router.push("/events");
     },
     onError: (err: unknown) => {
@@ -102,7 +105,7 @@ export default function EventDetailPage() {
   return (
     <div>
       {/* Cover image with gradient overlay */}
-      <div className="relative w-full h-[45vh] md:h-[50vh] bg-neutral-200">
+      <div className="relative w-full h-[45vh] md:h-[55vh] bg-neutral-200">
         <SafeImage
           src={event.coverImage || PLACEHOLDER}
           alt={event.title}
@@ -278,8 +281,8 @@ export default function EventDetailPage() {
           </div>
 
           {/* Right: Ticket widget */}
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="bg-white border border-neutral-200 rounded-2xl shadow-md p-6">
+          <div className="lg:sticky lg:top-28 lg:self-start z-10">
+            <div className="bg-white/70 backdrop-blur-xl border border-white rounded-[2rem] shadow-[0_8px_40px_rgb(0,0,0,0.08)] p-7 supports-[backdrop-filter]:bg-white/60">
               <div className="flex items-end gap-1 mb-1">
                 <span className="text-2xl font-bold text-neutral-900">
                   {formatPrice(event.price)}

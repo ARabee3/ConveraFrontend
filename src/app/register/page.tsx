@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Home, Eye, EyeOff, User, Building2 } from "lucide-react";
+import { Eye, EyeOff, User, Building2 } from "lucide-react";
 import { authApi } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -69,11 +69,17 @@ function RegisterForm() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-neutral-50 flex items-center justify-center px-4 py-16">
-      <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-md border border-neutral-100">
-        <div className="flex items-center gap-2 justify-center mb-8">
-          <Home className="h-7 w-7 text-primary-600" aria-hidden="true" />
-          <span className="text-2xl font-bold text-primary-600 tracking-tight">
-            convera
+      <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_8px_40px_rgb(0,0,0,0.06)] p-8 sm:p-10 w-full max-w-md border border-neutral-100/80 relative">
+        <div className="flex items-center justify-center gap-2.5 mb-10">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-indigo-600 text-white shadow-sm">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor"/>
+              <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          <span className="text-3xl font-extrabold text-neutral-900 tracking-tighter">
+            Convera.
           </span>
         </div>
 
@@ -101,10 +107,10 @@ function RegisterForm() {
               <button
                 type="button"
                 onClick={() => setValue("role", "CUSTOMER")}
-                className={`flex items-center gap-3 border rounded-xl p-3 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
+                className={`flex items-center gap-3 border rounded-[1rem] p-3 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                   selectedRole === "CUSTOMER"
-                    ? "border-primary-500 bg-primary-50"
-                    : "border-neutral-200 hover:border-neutral-400"
+                    ? "border-primary-500/50 bg-primary-50/50 shadow-sm"
+                    : "border-neutral-200/60 bg-neutral-50/50 hover:bg-neutral-100 hover:border-neutral-300"
                 }`}
                 aria-pressed={selectedRole === "CUSTOMER"}
               >
@@ -126,7 +132,7 @@ function RegisterForm() {
                   >
                     Book stays
                   </p>
-                  <p className="text-xs text-neutral-500">
+                  <p className="text-[11px] text-neutral-500">
                     Find properties & events
                   </p>
                 </div>
@@ -134,10 +140,10 @@ function RegisterForm() {
               <button
                 type="button"
                 onClick={() => setValue("role", "HOST")}
-                className={`flex items-center gap-3 border rounded-xl p-3 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
+                className={`flex items-center gap-3 border rounded-[1rem] p-3 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                   selectedRole === "HOST"
-                    ? "border-primary-500 bg-primary-50"
-                    : "border-neutral-200 hover:border-neutral-400"
+                    ? "border-primary-500/50 bg-primary-50/50 shadow-sm"
+                    : "border-neutral-200/60 bg-neutral-50/50 hover:bg-neutral-100 hover:border-neutral-300"
                 }`}
                 aria-pressed={selectedRole === "HOST"}
               >

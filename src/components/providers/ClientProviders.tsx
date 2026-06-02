@@ -16,6 +16,7 @@ export default function ClientProviders({ children }: { children: React.ReactNod
   const initFromStorage = useAuthStore((s) => s.initFromStorage);
 
   useEffect(() => {
+    // Re-read in case another tab changed storage while this tab was inactive
     initFromStorage();
   }, [initFromStorage]);
 

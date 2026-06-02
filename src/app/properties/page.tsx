@@ -107,7 +107,7 @@ function PropertiesContent() {
       <div className="flex gap-8">
         {/* Sidebar filters — desktop sticky, mobile slide-over */}
         <aside className="hidden md:block w-72 shrink-0">
-          <div className="bg-white rounded-2xl border border-neutral-200 p-6 sticky top-24 space-y-8">
+          <div className="bg-white/60 backdrop-blur-md rounded-3xl border border-neutral-200/60 p-6 sticky top-28 space-y-8 shadow-sm">
             <FilterContent
               priceMin={priceMinInput}
               setPriceMin={setPriceMinInput}
@@ -228,7 +228,7 @@ function FilterContent({
               type="number"
               value={priceMin}
               onChange={(e) => setPriceMin(Number(e.target.value))}
-              className="w-full border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all"
+              className="w-full bg-neutral-50/50 hover:bg-neutral-100 border border-neutral-200/60 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-500/10 transition-all"
               min={0}
             />
           </div>
@@ -238,7 +238,7 @@ function FilterContent({
               type="number"
               value={priceMax}
               onChange={(e) => setPriceMax(Number(e.target.value))}
-              className="w-full border border-neutral-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all"
+              className="w-full bg-neutral-50/50 hover:bg-neutral-100 border border-neutral-200/60 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-500/10 transition-all"
               min={0}
             />
           </div>
@@ -274,7 +274,7 @@ function FilterContent({
         <select
           value={ratingMin}
           onChange={(e) => setRatingMin(Number(e.target.value))}
-          className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all"
+          className="w-full bg-neutral-50/50 hover:bg-neutral-100 border border-neutral-200/60 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-500/10 transition-all cursor-pointer"
         >
           <option value={0}>Any rating</option>
           {[3, 3.5, 4, 4.5].map((r) => (

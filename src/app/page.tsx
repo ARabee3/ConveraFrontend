@@ -37,19 +37,30 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-primary-600 to-primary-800 min-h-[60vh] flex items-center justify-center px-4 overflow-hidden">
-        {/* Subtle pattern overlay */}
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,white_1px,transparent_1px)] bg-[length:24px_24px]" />
+      <section className="relative min-h-[75vh] flex items-center justify-center px-4 overflow-hidden bg-neutral-950">
+        {/* Abstract glowing shapes */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-[600px] opacity-40 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-600 rounded-full mix-blend-screen filter blur-[128px] animate-pulse" style={{ animationDuration: '4s' }} />
+          <div className="absolute top-1/3 right-1/4 w-[32rem] h-[32rem] bg-indigo-500 rounded-full mix-blend-screen filter blur-[128px] animate-pulse" style={{ animationDuration: '6s', animationDelay: '2s' }} />
+        </div>
+        
+        <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(circle_at_center,white_1px,transparent_1px)] bg-[length:24px_24px]" />
 
-        <div className="relative text-center max-w-3xl w-full py-16">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-5 leading-tight tracking-tight">
-            Find your perfect stay
+        <div className="relative z-10 text-center max-w-4xl w-full py-20 mt-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-primary-200 text-sm font-medium mb-8 backdrop-blur-md shadow-sm">
+            <span className="flex h-2 w-2 rounded-full bg-primary-400"></span>
+            Experience the new Convera
+          </div>
+          <h1 className="text-5xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-neutral-500 mb-6 tracking-tight text-balance">
+            Elevate your next journey
           </h1>
-          <p className="text-white/80 text-lg md:text-xl mb-10 max-w-xl mx-auto leading-relaxed">
-            Discover amazing properties and unforgettable events nearby
+          <p className="text-neutral-300 text-lg md:text-xl mb-12 max-w-2xl mx-auto leading-relaxed font-light">
+            Book premium stays and exclusive events in one seamless platform. Designed for the modern explorer.
           </p>
-          <div className="flex justify-center px-4">
-            <SearchBar />
+          <div className="flex justify-center px-4 w-full max-w-4xl mx-auto">
+            <div className="w-full p-2 md:p-3 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
+              <SearchBar />
+            </div>
           </div>
         </div>
       </section>
@@ -138,17 +149,19 @@ export default function HomePage() {
       </section>
 
       {/* CTA Banner */}
-      <section className="bg-neutral-100 py-16 md:py-24 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4 tracking-tight">
-            Become a Host
+      <section className="relative py-24 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-neutral-950" />
+        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_bottom,var(--tw-gradient-stops))] from-primary-900 via-neutral-950 to-neutral-950" />
+        <div className="max-w-4xl mx-auto text-center relative z-10 border border-white/10 bg-white/5 backdrop-blur-md rounded-3xl p-12 shadow-2xl">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">
+            Ready to host?
           </h2>
-          <p className="text-neutral-500 text-lg md:text-xl mb-10 max-w-2xl mx-auto leading-relaxed">
-            Earn extra income by sharing your space with travelers from around the world.
+          <p className="text-neutral-300 text-lg md:text-xl mb-10 max-w-2xl mx-auto leading-relaxed font-light">
+            Join thousands of hosts earning extra income by sharing their space with travelers worldwide.
           </p>
           <Link
             href="/register?role=HOST"
-            className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold px-8 py-4 rounded-xl transition-colors duration-150 text-lg shadow-md hover:shadow-lg active:scale-[0.98]"
+            className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-500 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-200 text-lg shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:shadow-[0_0_30px_rgba(79,70,229,0.6)] active:scale-[0.98]"
           >
             Become a Host <ArrowRight className="h-5 w-5" />
           </Link>
