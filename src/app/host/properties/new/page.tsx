@@ -70,37 +70,37 @@ export default function NewPropertyPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <Link href="/host/properties" className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 mb-6">
-        <ChevronLeft className="w-4 h-4" /> Back to dashboard
+      <Link href="/host/properties" className="flex items-center gap-1 text-sm text-neutral-600 hover:text-neutral-900 mb-6">
+        <ChevronLeft className="h-4 w-4" /> Back to dashboard
       </Link>
 
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Add New Property</h1>
-      <p className="text-gray-500 mb-8">Fill in the details to list your property</p>
+      <h1 className="text-2xl font-bold text-neutral-900 mb-1">Add New Property</h1>
+      <p className="text-neutral-500 mb-8">Fill in the details to list your property</p>
 
       {mutation.error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-6">
+        <div className="bg-error-50 border border-error-200 text-error-700 text-sm px-4 py-3 rounded-xl mb-6">
           {(mutation.error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to create property."}
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white border border-gray-200 rounded-2xl p-8">
-        <Input id="title" label="Property title" placeholder="Cozy apartment in Cairo" error={errors.title?.message} {...register("title")} />
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white border border-neutral-200 rounded-2xl p-6 md:p-8 shadow-sm">
+        <Input label="Property title" placeholder="Cozy apartment in Cairo" error={errors.title?.message} {...register("title")} />
 
         <div>
-          <label className="block text-sm font-medium text-gray-800 mb-1.5">Description</label>
+          <label className="block text-sm font-medium text-neutral-800 mb-1.5">Description</label>
           <textarea
             rows={4}
             placeholder="Describe your property..."
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-900 focus:ring-2 focus:ring-gray-900 focus:ring-opacity-10 resize-none"
+            className="w-full border border-neutral-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 resize-none transition-all"
             {...register("description")}
           />
-          {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description.message}</p>}
+          {errors.description && <p className="mt-1 text-xs text-error-600">{errors.description.message}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-800 mb-1.5">Property type</label>
+          <label className="block text-sm font-medium text-neutral-800 mb-1.5">Property type</label>
           <select
-            className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-900"
+            className="w-full border border-neutral-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 bg-white transition-all"
             {...register("type")}
           >
             <option value="APARTMENT">Apartment</option>
@@ -108,7 +108,6 @@ export default function NewPropertyPage() {
           </select>
         </div>
 
-        {/* Location Picker */}
         <LocationPicker
           lat={lat}
           lng={lng}
@@ -119,28 +118,26 @@ export default function NewPropertyPage() {
             setValue("longitude", loc.lng);
           }}
         />
-        {errors.address && <p className="text-xs text-red-500">{errors.address.message}</p>}
-        {errors.latitude && <p className="text-xs text-red-500">{errors.latitude.message}</p>}
-        {errors.longitude && <p className="text-xs text-red-500">{errors.longitude.message}</p>}
+        {errors.address && <p className="text-xs text-error-600">{errors.address.message}</p>}
+        {errors.latitude && <p className="text-xs text-error-600">{errors.latitude.message}</p>}
+        {errors.longitude && <p className="text-xs text-error-600">{errors.longitude.message}</p>}
 
-        <Input id="basePrice" type="number" step="0.01" label="Price per night (EGP)" placeholder="500" error={errors.basePrice?.message} {...register("basePrice", { valueAsNumber: true })} />
+        <Input type="number" step="0.01" label="Price per night (EGP)" placeholder="500" error={errors.basePrice?.message} {...register("basePrice", { valueAsNumber: true })} />
 
         <Input
-          id="amenitiesStr"
           label="Amenities (comma-separated)"
           placeholder="WiFi, Pool, Parking, AC"
           error={errors.amenitiesStr?.message}
           {...register("amenitiesStr")}
         />
 
-        {/* Image Uploader */}
         <ImageUploader
           value={imageUrls || []}
           onChange={(urls) => setValue("imageUrls", urls)}
           maxFiles={5}
           label="Property photos"
         />
-        {errors.imageUrls && <p className="text-xs text-red-500">{errors.imageUrls.message}</p>}
+        {errors.imageUrls && <p className="text-xs text-error-600">{errors.imageUrls.message}</p>}
 
         <div className="flex gap-4 pt-2">
           <Button type="submit" isLoading={mutation.isPending} size="lg" className="flex-1">

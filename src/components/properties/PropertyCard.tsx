@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { MapPin } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
 import StarRating from "@/components/ui/StarRating";
@@ -17,23 +18,28 @@ export default function PropertyCard({ property, className }: PropertyCardProps)
   const imgSrc = property.imageUrls?.[0] || PLACEHOLDER;
 
   return (
-    <Link href={`/properties/${property.id}`} className={cn("block group", className)}>
-      <div className="relative overflow-hidden rounded-2xl aspect-[4/3] bg-gray-100 mb-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+    <Link
+      href={`/properties/${property.id}`}
+      className={cn("block group", className)}
+      aria-label={`${property.title}, ${property.address}`}
+    >
+      <div className="relative overflow-hidden rounded-2xl aspect-[4/3] bg-neutral-100 mb-3">
+        <SafeImage
           src={imgSrc}
           alt={property.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER; }}
+          containerClassName="h-full w-full"
+          className="group-hover:scale-105 transition-transform duration-300 ease-out"
         />
         <div className="absolute top-3 left-3">
-          <span className="bg-white text-xs font-semibold px-2 py-1 rounded-full shadow-sm text-gray-700">
+          <span className="bg-white/95 backdrop-blur-sm text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm text-neutral-700">
             {property.type === "APARTMENT" ? "Apartment" : "Hotel"}
           </span>
         </div>
         {!property.isActive && (
-          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-            <span className="text-white font-semibold text-sm bg-black bg-opacity-50 px-3 py-1 rounded-full">Unavailable</span>
+          <div className="absolute inset-0 bg-neutral-900/50 flex items-center justify-center backdrop-blur-[2px]">
+            <span className="text-white font-semibold text-sm bg-neutral-900/70 px-3 py-1.5 rounded-full">
+              Unavailable
+            </span>
           </div>
         )}
       </div>
@@ -41,21 +47,23 @@ export default function PropertyCard({ property, className }: PropertyCardProps)
       <div>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
-              <MapPin className="w-3 h-3 flex-shrink-0" />
+            <div className="flex items-center gap-1 text-xs text-neutral-500 mb-1">
+              <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
               <span className="truncate">{property.address}</span>
             </div>
-            <h3 className="font-semibold text-gray-900 text-sm truncate">{property.title}</h3>
+            <h3 className="font-semibold text-neutral-900 text-sm truncate leading-snug">
+              {property.title}
+            </h3>
           </div>
           {property.avgRating !== undefined && property.avgRating > 0 && (
-            <div className="flex-shrink-0">
+            <div className="shrink-0 pt-0.5">
               <StarRating rating={property.avgRating} size="sm" />
             </div>
           )}
         </div>
-        <p className="mt-1 text-sm text-gray-900">
-          <span className="font-semibold">{formatPrice(property.basePrice)}</span>
-          <span className="text-gray-500 font-normal"> / night</span>
+        <p className="mt-1.5 text-sm text-neutral-700">
+          <span className="font-semibold text-neutral-900">{formatPrice(property.basePrice)}</span>
+          <span className="text-neutral-500 font-normal"> / night</span>
         </p>
       </div>
     </Link>

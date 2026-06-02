@@ -44,6 +44,8 @@ export interface Property {
   isActive: boolean;
   avgRating?: number;
   reviews?: Review[];
+  bookings?: { startDate: string; endDate: string }[];
+  availabilityOverrides?: AvailabilityOverride[];
   createdAt?: string;
 }
 

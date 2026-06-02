@@ -9,6 +9,7 @@ import { Home, CheckCircle } from "lucide-react";
 import { authApi } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 const schema = z.object({ code: z.string().length(6, "Code must be 6 digits") });
 type FormData = z.infer<typeof schema>;
@@ -37,35 +38,34 @@ function VerifyEmailContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-16">
-      <div className="bg-white rounded-2xl shadow-card p-8 w-full max-w-md">
+    <div className="min-h-[calc(100vh-4rem)] bg-neutral-50 flex items-center justify-center px-4 py-16">
+      <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-md border border-neutral-100">
         <div className="flex items-center gap-2 justify-center mb-8">
-          <Home className="w-7 h-7 text-[#FF385C]" />
-          <span className="text-2xl font-bold text-[#FF385C]">convera</span>
+          <Home className="h-7 w-7 text-primary-600" aria-hidden="true" />
+          <span className="text-2xl font-bold text-primary-600 tracking-tight">convera</span>
         </div>
 
         {success ? (
           <div className="text-center">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Email Verified!</h2>
-            <p className="text-gray-500 text-sm">Redirecting to login...</p>
+            <CheckCircle className="h-16 w-16 text-success-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-neutral-900 mb-2">Email Verified!</h2>
+            <p className="text-neutral-500 text-sm">Redirecting to login...</p>
           </div>
         ) : (
           <>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Verify your email</h1>
-            <p className="text-gray-500 text-sm mb-8">
-              Enter the 6-digit code sent to <span className="font-medium text-gray-900">{email}</span>
+            <h1 className="text-2xl font-bold text-neutral-900 mb-1">Verify your email</h1>
+            <p className="text-neutral-500 text-sm mb-8">
+              Enter the 6-digit code sent to <span className="font-medium text-neutral-900">{email}</span>
             </p>
 
             {serverError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-6">
+              <div className="bg-error-50 border border-error-200 text-error-700 text-sm px-4 py-3 rounded-xl mb-6">
                 {serverError}
               </div>
             )}
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <Input
-                id="code"
                 label="Verification code"
                 placeholder="123456"
                 maxLength={6}
@@ -85,7 +85,7 @@ function VerifyEmailContent() {
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF385C]"></div></div>}>
+    <Suspense fallback={<div className="min-h-[calc(100vh-4rem)] flex items-center justify-center"><LoadingSpinner /></div>}>
       <VerifyEmailContent />
     </Suspense>
   );

@@ -3,11 +3,12 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bell, ChevronLeft } from "lucide-react";
-import Link from "next/link";
+import { Bell } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { ToggleSwitch } from "@/components/ui/ToggleSwitch";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 
 interface Preference {
   category: string;
@@ -25,14 +26,23 @@ export default function NotificationSettingsPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["notification-preferences"],
-    queryFn: () => api.get<{ preferences: Preference[] }>("/notifications/preferences").then((r) => r.data),
+    queryFn: () =>
+      api
+        .get<{ preferences: Preference[] }>("/notifications/preferences")
+        .then((r) => r.data),
     enabled: !!user,
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ category, enabled }: { category: string; enabled: boolean }) =>
-      api.patch("/notifications/preferences", { category, enabled }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notification-preferences"] }),
+    mutationFn: ({
+      category,
+      enabled,
+    }: {
+      category: string;
+      enabled: boolean;
+    }) => api.patch("/notifications/preferences", { category, enabled }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["notification-preferences"] }),
   });
 
   if (!user) return <LoadingSpinner fullPage />;
@@ -40,53 +50,73 @@ export default function NotificationSettingsPage() {
   const preferences = data?.preferences || [];
 
   const categories = [
-    { key: "REMINDERS", label: "Reminders", description: "Booking and event reminders" },
-    { key: "CHAT_ALERTS", label: "Chat Alerts", description: "New message notifications" },
+    {
+      key: "REMINDERS",
+      label: "Reminders",
+      description: "Booking and event reminders",
+    },
+    {
+      key: "CHAT_ALERTS",
+      label: "Chat Alerts",
+      description: "New message notifications",
+    },
   ];
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <Link href="/" className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 mb-6">
-        <ChevronLeft className="w-4 h-4" /> Back
-      </Link>
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+      <Breadcrumb
+        items={[
+          { label: "Profile", href: "/profile" },
+          { label: "Notifications" },
+        ]}
+        className="mb-6"
+      />
 
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 bg-[#FF385C]/10 rounded-full flex items-center justify-center">
-          <Bell className="w-5 h-5 text-[#FF385C]" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+          <Bell className="h-5 w-5" aria-hidden="true" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Notification Settings</h1>
-          <p className="text-gray-500 text-sm">Manage your notification preferences</p>
+          <h1 className="text-2xl font-bold text-neutral-900">
+            Notification Settings
+          </h1>
+          <p className="text-neutral-500 text-sm">
+            Manage your notification preferences
+          </p>
         </div>
       </div>
 
       {isLoading ? (
-        <LoadingSpinner />
+        <div className="space-y-4">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div
+              key={i}
+              className="bg-white border border-neutral-200 rounded-2xl p-5 animate-pulse h-20"
+            />
+          ))}
+        </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-2xl divide-y divide-gray-100">
+        <div className="bg-white border border-neutral-200 rounded-2xl divide-y divide-neutral-100">
           {categories.map((cat) => {
             const pref = preferences.find((p) => p.category === cat.key);
             const enabled = pref?.enabled ?? true;
 
             return (
-              <div key={cat.key} className="p-6 flex items-center justify-between">
+              <div
+                key={cat.key}
+                className="p-5 flex items-center justify-between"
+              >
                 <div>
-                  <h3 className="font-semibold text-gray-900">{cat.label}</h3>
-                  <p className="text-sm text-gray-500">{cat.description}</p>
+                  <h3 className="font-semibold text-neutral-900">{cat.label}</h3>
+                  <p className="text-sm text-neutral-500">{cat.description}</p>
                 </div>
-                <button
-                  onClick={() => updateMutation.mutate({ category: cat.key, enabled: !enabled })}
+                <ToggleSwitch
+                  checked={enabled}
+                  onChange={(checked) =>
+                    updateMutation.mutate({ category: cat.key, enabled: checked })
+                  }
                   disabled={updateMutation.isPending}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    enabled ? "bg-[#FF385C]" : "bg-gray-200"
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      enabled ? "translate-x-6" : "translate-x-1"
-                    }`}
-                  />
-                </button>
+                />
               </div>
             );
           })}

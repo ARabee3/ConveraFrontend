@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
+import { useAuthStore } from "@/store/auth";
 
 interface ChatMessage {
   id: string;
@@ -9,6 +10,7 @@ interface ChatMessage {
   senderId: string;
   content: string;
   createdAt: string;
+  isHostSender?: boolean;
 }
 
 interface ChatContextValue {
@@ -19,6 +21,8 @@ interface ChatContextValue {
   subscribe: (sessionId: string) => void;
   markAsRead: (sessionId: string, lastMessageId: string) => void;
   clearMessages: () => void;
+  lastError: string | null;
+  clearError: () => void;
 }
 
 const ChatContext = createContext<ChatContextValue>({
@@ -29,20 +33,28 @@ const ChatContext = createContext<ChatContextValue>({
   subscribe: () => {},
   markAsRead: () => {},
   clearMessages: () => {},
+  lastError: null,
+  clearError: () => {},
 });
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [lastError, setLastError] = useState<string | null>(null);
+
+  const accessToken = useAuthStore((s) => s.accessToken);
+
+  const clearError = useCallback(() => setLastError(null), []);
 
   useEffect(() => {
-    const token = localStorage.getItem("convera_access_token");
-    if (!token) return;
+    if (!accessToken) return;
 
-    const socket = io("http://localhost:3000/chat", {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+    const socket = io(`${baseUrl}/chat`, {
       transports: ["websocket"],
-      auth: { token },
+      auth: { token: accessToken },
     });
 
     socketRef.current = socket;
@@ -64,18 +76,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     });
 
     socket.on("policy_violation", (data: { sessionId: string; message: string }) => {
-      console.warn("Policy violation:", data.message);
+      setLastError(data.message);
     });
 
     socket.on("exception", (data: { status: string; message: string }) => {
-      console.error("Socket error:", data.message);
+      setLastError(data.message);
     });
 
     return () => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, []);
+  }, [accessToken]);
 
   const sendMessage = useCallback((sessionId: string, content: string) => {
     if (socketRef.current) {
@@ -109,6 +121,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         subscribe,
         markAsRead,
         clearMessages,
+        lastError,
+        clearError,
       }}
     >
       {children}

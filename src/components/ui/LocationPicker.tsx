@@ -125,26 +125,24 @@ export default function LocationPicker({
     let cancelled = false;
 
     const init = async () => {
-      const linkId = "leaflet-css";
-      if (!document.getElementById(linkId)) {
-        const link = document.createElement("link");
-        link.id = linkId;
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        document.head.appendChild(link);
-      }
-
       const L = await import("leaflet");
-      if (cancelled) return;
+      if (cancelled || !mapContainerRef.current) return;
 
       const defaultLat = lat ?? 30.0444;
       const defaultLng = lng ?? 31.2357;
 
-      map = L.map(mapContainerRef.current!).setView([defaultLat, defaultLng], 13);
+      // Clean up any stale Leaflet state on the container (e.g. from Strict Mode unmount)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const container = mapContainerRef.current as any;
+      if (container._leaflet_id) {
+        delete container._leaflet_id;
+      }
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      map = L.map(mapContainerRef.current).setView([defaultLat, defaultLng], 13);
+
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
         attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         maxZoom: 19,
       }).addTo(map);
 
@@ -178,15 +176,27 @@ export default function LocationPicker({
       mapRef.current = map;
       markerRef.current = marker;
       setMapReady(true);
+
+      const resizeObserver = new ResizeObserver(() => {
+        if (!cancelled && map) {
+          map.invalidateSize();
+        }
+      });
+      resizeObserver.observe(mapContainerRef.current!);
+
+      return () => {
+        cancelled = true;
+        resizeObserver.disconnect();
+        map?.remove();
+        mapRef.current = null;
+        markerRef.current = null;
+      };
     };
 
-    init();
+    const cleanup = init();
 
     return () => {
-      cancelled = true;
-      map?.remove();
-      mapRef.current = null;
-      markerRef.current = null;
+      cleanup.then(cleanupFn => cleanupFn && cleanupFn());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -237,11 +247,11 @@ export default function LocationPicker({
           mapRef.current.setView([latitude, longitude], 16);
         }
         onChangeRef.current({ lat: latitude, lng: longitude, address: addr });
-        setLoading(false);
-        // Warn if accuracy is poor (>1km)
-        if (accuracy > 1000) {
-          setGeoError(`Location accuracy is low (~${Math.round(accuracy)}m). Please drag the pin to fine-tune.`);
+        // Warn only if accuracy is very poor (>5km), otherwise accept it silently
+        if (accuracy > 5000) {
+          setGeoError(`GPS accuracy is low (~${Math.round(accuracy / 1000)}km). You can drag the pin for more precision.`);
         }
+        setLoading(false);
       },
       (err) => {
         setLoading(false);
@@ -312,7 +322,7 @@ export default function LocationPicker({
               type="button"
               onClick={getCurrentLocation}
               disabled={loading}
-              className="p-1.5 text-gray-500 hover:text-[#FF385C] rounded-md hover:bg-red-50 transition-colors"
+              className="p-1.5 text-neutral-500 hover:text-primary-600 rounded-md hover:bg-primary-50 transition-colors"
               title="Use my current location"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crosshair className="w-4 h-4" />}
@@ -367,7 +377,7 @@ export default function LocationPicker({
       <div className="relative">
         <div
           ref={mapContainerRef}
-          className="h-72 w-full rounded-xl border border-gray-200 bg-gray-100"
+          className="h-72 w-full rounded-xl border border-neutral-200 bg-neutral-100 relative isolate z-0"
         />
         {!mapReady && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50 rounded-xl">
@@ -384,11 +394,11 @@ export default function LocationPicker({
       {lat !== undefined && lng !== undefined && (
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
-            <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Latitude</span>
+            <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Latitude</span>
             <p className="text-sm font-mono text-gray-900">{lat.toFixed(6)}</p>
           </div>
           <div className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
-            <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Longitude</span>
+            <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Longitude</span>
             <p className="text-sm font-mono text-gray-900">{lng.toFixed(6)}</p>
           </div>
         </div>

@@ -26,23 +26,21 @@ export default function MapView({ lat, lng, address, zoom = 14, height = "h-80" 
     let cancelled = false;
 
     const init = async () => {
-      const linkId = "leaflet-css-detail";
-      if (!document.getElementById(linkId)) {
-        const link = document.createElement("link");
-        link.id = linkId;
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        document.head.appendChild(link);
+      const L = await import("leaflet");
+      if (cancelled || !mapContainerRef.current) return;
+
+      // Clean up any stale Leaflet state on the container (e.g. from Strict Mode unmount)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const container = mapContainerRef.current as any;
+      if (container._leaflet_id) {
+        delete container._leaflet_id;
       }
 
-      const L = await import("leaflet");
-      if (cancelled) return;
+      map = L.map(mapContainerRef.current).setView([lat, lng], zoom);
 
-      map = L.map(mapContainerRef.current!).setView([lat, lng], zoom);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
         attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         maxZoom: 19,
       }).addTo(map);
 
@@ -64,21 +62,33 @@ export default function MapView({ lat, lng, address, zoom = 14, height = "h-80" 
       mapRef.current = map;
       markerRef.current = marker;
       setMapReady(true);
+
+      const resizeObserver = new ResizeObserver(() => {
+        if (!cancelled && map) {
+          map.invalidateSize();
+        }
+      });
+      resizeObserver.observe(mapContainerRef.current!);
+
+      return () => {
+        cancelled = true;
+        resizeObserver.disconnect();
+        map?.remove();
+        mapRef.current = null;
+        markerRef.current = null;
+      };
     };
 
-    init();
+    const cleanup = init();
 
     return () => {
-      cancelled = true;
-      map?.remove();
-      mapRef.current = null;
-      markerRef.current = null;
+      cleanup.then(cleanupFn => cleanupFn && cleanupFn());
     };
   }, [lat, lng, zoom, address]);
 
   return (
     <div className="space-y-2">
-      <div className={`relative ${height} w-full rounded-2xl border border-gray-200 bg-gray-100 overflow-hidden`}>
+      <div className={`relative ${height} w-full rounded-2xl border border-neutral-200 bg-neutral-100 overflow-hidden isolate z-0`}>
         <div ref={mapContainerRef} className="w-full h-full" />
         {!mapReady && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50">
@@ -89,7 +99,7 @@ export default function MapView({ lat, lng, address, zoom = 14, height = "h-80" 
       </div>
       {address && (
         <div className="flex items-center gap-1.5 text-sm text-gray-500">
-          <MapPin className="w-4 h-4 text-[#FF385C]" />
+          <MapPin className="w-4 h-4 text-primary-600" />
           <span>{address}</span>
         </div>
       )}

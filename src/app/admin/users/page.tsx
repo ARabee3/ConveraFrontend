@@ -11,7 +11,7 @@ import { formatDate } from "@/lib/utils";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function AdminUsersPage() {
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -19,9 +19,10 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState("");
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "SYSTEM_ADMIN") router.push("/");
-  }, [user, router]);
+    if (user.role !== "ADMIN" && user.role !== "SYSTEM_ADMIN") router.push("/");
+  }, [user, hydrated, router]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-users", search, roleFilter, statusFilter],
@@ -32,7 +33,7 @@ export default function AdminUsersPage() {
         status: statusFilter || undefined,
         take: 50,
       }).then((r) => r.data),
-    enabled: !!user && user.role === "SYSTEM_ADMIN",
+    enabled: !!user && (user.role === "ADMIN" || user.role === "SYSTEM_ADMIN"),
   });
 
   const statusMutation = useMutation({
@@ -51,7 +52,7 @@ export default function AdminUsersPage() {
     }
   };
 
-  if (!user) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user) return <LoadingSpinner fullPage />;
 
   const users = data?.data || [];
 

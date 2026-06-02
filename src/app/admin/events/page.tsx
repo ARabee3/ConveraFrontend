@@ -12,16 +12,17 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Button from "@/components/ui/Button";
 
 export default function AdminEventsPage() {
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "SYSTEM_ADMIN") {
+    if (user.role !== "ADMIN" && user.role !== "SYSTEM_ADMIN") {
       router.push("/");
     }
-  }, [user, router]);
+  }, [user, hydrated, router]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-events"],
@@ -46,7 +47,7 @@ export default function AdminEventsPage() {
     if (confirm(`Delete event "${title}"?`)) deleteMutation.mutate(id);
   };
 
-  if (!user) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user) return <LoadingSpinner fullPage />;
 
   const events = data?.events || [];
 

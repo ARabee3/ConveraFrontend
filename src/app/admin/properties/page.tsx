@@ -10,16 +10,17 @@ import { useAuthStore } from "@/store/auth";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function AdminPropertiesPage() {
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push("/login"); return; }
-    if (user.role !== "SYSTEM_ADMIN") router.push("/");
-  }, [user, router]);
+    if (user.role !== "ADMIN" && user.role !== "SYSTEM_ADMIN") router.push("/");
+  }, [user, hydrated, router]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-properties", search, statusFilter],
@@ -29,7 +30,7 @@ export default function AdminPropertiesPage() {
         status: statusFilter || undefined,
         take: 50,
       }).then((r) => r.data),
-    enabled: !!user && user.role === "SYSTEM_ADMIN",
+    enabled: !!user && (user.role === "ADMIN" || user.role === "SYSTEM_ADMIN"),
   });
 
   const statusMutation = useMutation({
@@ -50,7 +51,7 @@ export default function AdminPropertiesPage() {
     }
   };
 
-  if (!user) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user) return <LoadingSpinner fullPage />;
 
   const properties = data?.data || [];
 

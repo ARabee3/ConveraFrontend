@@ -11,7 +11,7 @@ export default function LoadingSpinner({ className, size = "md", fullPage }: Loa
   const sizes = { sm: "w-4 h-4", md: "w-8 h-8", lg: "w-12 h-12" };
 
   const spinner = (
-    <Loader2 className={cn("animate-spin text-[#FF385C]", sizes[size], className)} />
+    <Loader2 className={cn("animate-spin text-primary-600", sizes[size], className)} />
   );
 
   if (fullPage) {
