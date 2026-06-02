@@ -18,16 +18,17 @@ import { Breadcrumb } from "@/components/layout/Breadcrumb";
 const PLACEHOLDER = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=200&q=60";
 
 export default function HostPropertiesPage() {
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push("/login"); return; }
     if (user.role !== "HOST" && user.role !== "ADMIN" && user.role !== "SYSTEM_ADMIN") {
       router.push("/");
     }
-  }, [user, router]);
+  }, [user, hydrated, router]);
 
   const { data: properties, isLoading } = useQuery({
     queryKey: ["host-properties"],
@@ -44,7 +45,7 @@ export default function HostPropertiesPage() {
     if (confirm(`Delete "${title}"?`)) deleteMutation.mutate(id);
   };
 
-  if (!user) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user) return <LoadingSpinner fullPage />;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
@@ -80,9 +81,9 @@ export default function HostPropertiesPage() {
       ) : (
         <>
           {/* Desktop Table */}
-          <div className="hidden md:block bg-white border border-neutral-200 rounded-2xl overflow-hidden">
+          <div className="hidden md:block bg-white/60 backdrop-blur-xl border border-neutral-200/60 rounded-[2rem] overflow-hidden shadow-sm">
             <table className="w-full">
-              <thead className="bg-neutral-50 border-b border-neutral-200">
+              <thead className="bg-neutral-50/50 border-b border-neutral-200/60">
                 <tr>
                   <th scope="col" className="text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider px-6 py-4">
                     Property
@@ -174,7 +175,7 @@ export default function HostPropertiesPage() {
           {/* Mobile Cards */}
           <div className="md:hidden space-y-4">
             {properties.map((p) => (
-              <div key={p.id} className="bg-white border border-neutral-200 rounded-2xl p-4 hover:shadow-md transition-shadow">
+              <div key={p.id} className="bg-white/60 backdrop-blur-xl border border-neutral-200/60 rounded-[1.5rem] p-5 hover:shadow-lg hover:border-neutral-300/60 transition-all duration-300">
                 <div className="flex items-start gap-3 mb-3">
                   <SafeImage
                     src={p.imageUrls?.[0] || PLACEHOLDER}

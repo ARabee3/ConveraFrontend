@@ -30,15 +30,16 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function NewPropertyPage() {
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push("/login"); return; }
     if (user.role !== "HOST" && user.role !== "ADMIN" && user.role !== "SYSTEM_ADMIN") {
       router.push("/");
     }
-  }, [user, router]);
+  }, [user, hydrated, router]);
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),

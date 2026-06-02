@@ -17,7 +17,7 @@ type AvailabilityStatus = "BLOCKED" | "PRICE_OVERRIDE";
 
 export default function PropertyAvailabilityPage() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -28,11 +28,12 @@ export default function PropertyAvailabilityPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push("/login"); return; }
     if (user.role !== "HOST" && user.role !== "ADMIN" && user.role !== "SYSTEM_ADMIN") {
       router.push("/");
     }
-  }, [user, router]);
+  }, [user, hydrated, router]);
 
   const { data: properties, isLoading } = useQuery({
     queryKey: ["host-properties"],
@@ -78,7 +79,7 @@ export default function PropertyAvailabilityPage() {
     mutation.mutate();
   };
 
-  if (!user || isLoading) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user || isLoading) return <LoadingSpinner fullPage />;
 
   if (!property) {
     return (
@@ -114,16 +115,16 @@ export default function PropertyAvailabilityPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white border border-neutral-200 rounded-2xl p-6 md:p-8 space-y-6 shadow-sm">
+      <form onSubmit={handleSubmit} className="bg-white/60 backdrop-blur-xl border border-neutral-200/60 rounded-[2rem] p-6 md:p-10 space-y-8 shadow-sm">
         {/* Status selection */}
         <div>
           <label className="block text-sm font-medium text-neutral-800 mb-3">Action type</label>
           <div className="grid grid-cols-2 gap-4">
             <label
-              className={`flex items-center gap-3 border rounded-xl p-4 cursor-pointer transition-all duration-150 ${
+              className={`flex items-center gap-3 border rounded-[1rem] p-4 cursor-pointer transition-all duration-300 ${
                 status === "BLOCKED"
-                  ? "border-primary-500 bg-primary-50"
-                  : "border-neutral-200 hover:border-neutral-400"
+                  ? "border-primary-500/50 bg-primary-50/50 shadow-sm"
+                  : "border-neutral-200/60 bg-neutral-50/50 hover:bg-neutral-100 hover:border-neutral-300"
               }`}
             >
               <input
@@ -142,10 +143,10 @@ export default function PropertyAvailabilityPage() {
             </label>
 
             <label
-              className={`flex items-center gap-3 border rounded-xl p-4 cursor-pointer transition-all duration-150 ${
+              className={`flex items-center gap-3 border rounded-[1rem] p-4 cursor-pointer transition-all duration-300 ${
                 status === "PRICE_OVERRIDE"
-                  ? "border-primary-500 bg-primary-50"
-                  : "border-neutral-200 hover:border-neutral-400"
+                  ? "border-primary-500/50 bg-primary-50/50 shadow-sm"
+                  : "border-neutral-200/60 bg-neutral-50/50 hover:bg-neutral-100 hover:border-neutral-300"
               }`}
             >
               <input
@@ -201,9 +202,9 @@ export default function PropertyAvailabilityPage() {
       </form>
 
       {/* Current base price */}
-      <div className="mt-8 bg-neutral-50 border border-neutral-100 rounded-2xl p-6">
-        <p className="text-sm text-neutral-500">Current base price</p>
-        <p className="text-2xl font-bold text-neutral-900 mt-1">{formatPrice(property.basePrice)}</p>
+      <div className="mt-8 bg-white/60 backdrop-blur-xl border border-neutral-200/60 rounded-[2rem] p-8 shadow-sm text-center">
+        <p className="text-sm text-neutral-500 uppercase tracking-wider font-semibold">Current base price</p>
+        <p className="text-3xl font-extrabold text-neutral-900 mt-2">{formatPrice(property.basePrice)}</p>
         <p className="text-xs text-neutral-400 mt-1">/ night</p>
       </div>
     </div>

@@ -61,7 +61,7 @@ function EventsContent() {
       </h1>
 
       {/* Filter bar */}
-      <div className="bg-white border border-neutral-200 rounded-2xl p-4 mb-8 flex flex-wrap gap-4 items-end shadow-sm">
+      <div className="bg-white/60 backdrop-blur-xl border border-neutral-200/60 rounded-3xl p-5 mb-10 flex flex-wrap gap-5 items-end shadow-sm">
         <div className="flex-1 min-w-[200px]">
           <label className="block text-xs font-semibold text-neutral-600 mb-1 uppercase tracking-wider">
             Search
@@ -73,7 +73,7 @@ function EventsContent() {
               placeholder="Search events..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              className="w-full border border-neutral-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all"
+              className="w-full bg-neutral-50/50 hover:bg-neutral-100 border border-neutral-200/60 rounded-xl pl-9 pr-4 py-3 text-sm font-medium focus:outline-none focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-500/10 transition-all"
             />
           </div>
         </div>
@@ -88,7 +88,7 @@ function EventsContent() {
               type="date"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="border border-neutral-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all"
+              className="bg-neutral-50/50 hover:bg-neutral-100 border border-neutral-200/60 rounded-xl pl-9 pr-4 py-3 text-sm font-medium focus:outline-none focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-500/10 transition-all cursor-pointer"
             />
           </div>
         </div>
@@ -105,7 +105,7 @@ function EventsContent() {
               setPriceMax(e.target.value ? Number(e.target.value) : "")
             }
             min={0}
-            className="border border-neutral-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all w-32"
+            className="bg-neutral-50/50 hover:bg-neutral-100 border border-neutral-200/60 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-500/10 transition-all w-32"
           />
         </div>
 

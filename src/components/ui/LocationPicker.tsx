@@ -122,6 +122,7 @@ export default function LocationPicker({
 
     let map: LeafletMap | null = null;
     let marker: Marker | null = null;
+    let resizeObserver: ResizeObserver | null = null;
     let cancelled = false;
 
     const init = async () => {
@@ -136,6 +137,7 @@ export default function LocationPicker({
       const container = mapContainerRef.current as any;
       if (container._leaflet_id) {
         delete container._leaflet_id;
+        container.innerHTML = "";
       }
 
       map = L.map(mapContainerRef.current).setView([defaultLat, defaultLng], 13);
@@ -173,30 +175,55 @@ export default function LocationPicker({
         onChangeRef.current({ lat: pos.lat, lng: pos.lng, address: addr });
       });
 
+      // If component unmounted while we were importing leaflet
+      if (cancelled) {
+        map.remove();
+        map = null;
+        return;
+      }
+
       mapRef.current = map;
       markerRef.current = marker;
       setMapReady(true);
 
-      const resizeObserver = new ResizeObserver(() => {
+      // Force tile refresh after initial render settles
+      setTimeout(() => {
+        if (!cancelled && map) {
+          map.invalidateSize();
+        }
+      }, 200);
+
+      resizeObserver = new ResizeObserver(() => {
         if (!cancelled && map) {
           map.invalidateSize();
         }
       });
       resizeObserver.observe(mapContainerRef.current!);
-
-      return () => {
-        cancelled = true;
-        resizeObserver.disconnect();
-        map?.remove();
-        mapRef.current = null;
-        markerRef.current = null;
-      };
     };
 
-    const cleanup = init();
+    const containerEl = mapContainerRef.current;
+    setMapReady(false);
+    init();
 
+    // SYNCHRONOUS cleanup — sets cancelled flag immediately so async init() can bail out
     return () => {
-      cleanup.then(cleanupFn => cleanupFn && cleanupFn());
+      cancelled = true;
+      resizeObserver?.disconnect();
+      if (map) {
+        map.remove();
+        map = null;
+      }
+      mapRef.current = null;
+      markerRef.current = null;
+
+      if (containerEl) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const container = containerEl as any;
+        if (container._leaflet_id) {
+          delete container._leaflet_id;
+          container.innerHTML = "";
+        }
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

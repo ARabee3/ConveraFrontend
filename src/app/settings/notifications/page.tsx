@@ -16,13 +16,14 @@ interface Preference {
 }
 
 export default function NotificationSettingsPage() {
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) router.push("/login");
-  }, [user, router]);
+  }, [user, hydrated, router]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["notification-preferences"],
@@ -45,7 +46,7 @@ export default function NotificationSettingsPage() {
       queryClient.invalidateQueries({ queryKey: ["notification-preferences"] }),
   });
 
-  if (!user) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user) return <LoadingSpinner fullPage />;
 
   const preferences = data?.preferences || [];
 

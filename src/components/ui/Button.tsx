@@ -21,6 +21,8 @@ const buttonVariants = cva(
           "bg-error-600 text-white hover:bg-error-700 shadow-sm",
         outline:
           "border border-neutral-200 bg-transparent hover:bg-neutral-50 text-neutral-700",
+        glass:
+          "bg-white/50 border border-white/20 text-neutral-800 backdrop-blur-md hover:bg-white/60 shadow-sm",
       },
       size: {
         sm: "h-9 px-3 text-xs",

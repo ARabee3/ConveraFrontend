@@ -102,7 +102,7 @@ export default function AdminDashboardPage() {
             {cards.map((card) => (
               <div
                 key={card.title}
-                className="bg-white border border-neutral-200 rounded-2xl p-6 hover:shadow-md transition-shadow duration-150"
+                className="bg-white/60 backdrop-blur-xl border border-neutral-200/60 rounded-[2rem] p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className={`h-10 w-10 ${card.color} rounded-lg flex items-center justify-center`}>
@@ -125,11 +125,11 @@ export default function AdminDashboardPage() {
 
           {/* Users by Role */}
           {metrics?.users.byRole && (
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 mb-6">
-              <h2 className="text-lg font-bold text-neutral-900 mb-4">Users by Role</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-white/60 backdrop-blur-xl border border-neutral-200/60 rounded-[2rem] p-8 mb-8 shadow-sm">
+              <h2 className="text-lg font-bold text-neutral-900 mb-6">Users by Role</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
                 {Object.entries(metrics.users.byRole).map(([role, count]) => (
-                  <div key={role} className="bg-neutral-50 rounded-xl p-4 text-center border border-neutral-100">
+                  <div key={role} className="bg-white/40 rounded-2xl p-5 text-center border border-white shadow-sm">
                     <p className="text-xl font-bold text-neutral-900">{count}</p>
                     <p className="text-xs text-neutral-500 uppercase tracking-wider">{role}</p>
                   </div>
@@ -140,13 +140,13 @@ export default function AdminDashboardPage() {
 
           {/* Bookings by Status */}
           {metrics?.bookings.byStatus && (
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 mb-6">
-              <h2 className="text-lg font-bold text-neutral-900 mb-4">Bookings by Status</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-white/60 backdrop-blur-xl border border-neutral-200/60 rounded-[2rem] p-8 mb-8 shadow-sm">
+              <h2 className="text-lg font-bold text-neutral-900 mb-6">Bookings by Status</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
                 {Object.entries(metrics.bookings.byStatus).map(([status, count]) => {
                   const cfg = bookingStatusConfig[status] || { variant: "neutral" as const, label: status };
                   return (
-                    <div key={status} className="rounded-xl p-4 text-center bg-neutral-50 border border-neutral-100">
+                    <div key={status} className="rounded-2xl p-5 text-center bg-white/40 border border-white shadow-sm">
                       <p className="text-xl font-bold text-neutral-900">{count}</p>
                       <div className="mt-1">
                         <Badge variant={cfg.variant} size="sm">{cfg.label}</Badge>
@@ -159,7 +159,7 @@ export default function AdminDashboardPage() {
           )}
 
           {/* Quick Links */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
               { label: "Manage Users", href: "/admin/users" },
               { label: "Manage Properties", href: "/admin/properties" },
@@ -170,10 +170,10 @@ export default function AdminDashboardPage() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="bg-white border border-neutral-200 rounded-2xl p-5 hover:shadow-md transition-shadow duration-150 flex items-center justify-between"
+                className="bg-white/60 backdrop-blur-xl border border-neutral-200/60 rounded-[1.5rem] p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-between group"
               >
-                <span className="font-medium text-neutral-900">{link.label}</span>
-                <ArrowRight className="h-4 w-4 text-neutral-400" aria-hidden="true" />
+                <span className="font-semibold text-neutral-900 group-hover:text-primary-600 transition-colors">{link.label}</span>
+                <ArrowRight className="h-5 w-5 text-neutral-400 group-hover:text-primary-600 group-hover:translate-x-1 transition-all" aria-hidden="true" />
               </Link>
             ))}
           </div>

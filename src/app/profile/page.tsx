@@ -19,14 +19,15 @@ const roleBadges: Record<string, { variant: "default" | "primary" | "success" | 
 };
 
 export default function ProfilePage() {
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) router.push("/login");
-  }, [user, router]);
+  }, [user, hydrated, router]);
 
-  if (!user) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user) return <LoadingSpinner fullPage />;
 
   const roleBadge = roleBadges[user.role] || { variant: "neutral" as const, label: user.role };
 

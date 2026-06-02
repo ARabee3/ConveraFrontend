@@ -32,16 +32,17 @@ type FormData = z.infer<typeof schema>;
 
 export default function EditPropertyPage() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuthStore();
+  const { user, hydrated } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    if (!hydrated) return;
     if (!user) { router.push("/login"); return; }
     if (user.role !== "HOST" && user.role !== "ADMIN" && user.role !== "SYSTEM_ADMIN") {
       router.push("/");
     }
-  }, [user, router]);
+  }, [user, hydrated, router]);
 
   const { data: properties, isLoading: loadingProperties } = useQuery({
     queryKey: ["host-properties"],
@@ -100,7 +101,7 @@ export default function EditPropertyPage() {
 
   const onSubmit = (data: FormData) => mutation.mutate(data);
 
-  if (!user || loadingProperties) return <LoadingSpinner fullPage />;
+  if (!hydrated || !user || loadingProperties) return <LoadingSpinner fullPage />;
 
   if (!property) {
     return (
